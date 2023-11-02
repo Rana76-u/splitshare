@@ -1,0 +1,762 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:splitshare/Screens/CRUD/crud_event.dart';
+import 'package:splitshare/Screens/Home/home_appbar.dart';
+import 'package:splitshare/Screens/Home/home_floating.dart';
+
+import '../../Widgets/bottom_nav_bar.dart';
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+
+  Timer? connectionTimer;
+
+  bool connection = true;
+  bool _isSearching = false;
+  bool _isLoading = false;
+
+  String tripCode = '';
+  DateTime lastEdited = DateTime.now();
+
+  List<String> titles = [];
+  List<String> descriptions = [];
+  List<String> amounts = [];
+  List<String> times = [];
+  List<String> providerNames = [];
+  List<String> providerIDs = [];
+  List<String> docIDs = [];
+  List<String> isChanged = [];
+
+  TextEditingController searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  initState(){
+    _isLoading = true;
+    print('tracker1');
+    startConnectionCheckTimer();
+    loadTripInfo();
+    backupData();
+    super.initState();
+    //startConnectionCheckTimer();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    // Cancel the timer when the widget is disposed to prevent memory leaks.
+    connectionTimer?.cancel();
+  }
+
+  void startConnectionCheckTimer() {
+    // Create a timer that checks the connection status every 5 seconds.
+    connectionTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      checkConnection();
+    });
+  }
+
+  Future<void> checkConnection() async {
+    bool hasConnection = await InternetConnectionChecker().hasConnection;
+    if (hasConnection != connection) {
+      // The connection status has changed.
+      setState(() {
+        connection = hasConnection;
+      });
+
+      if(hasConnection){
+
+        print('tracker2');
+        loadTripInfo();
+        backupData();
+      }
+      else{
+        getDataFromSharedPreferences();
+      }
+    }
+  }
+
+  Future<void> loadTripInfo() async {
+    if(connection){
+      List<dynamic> userIds = [];
+      List<dynamic> userNames = [];
+
+      final prefs = await SharedPreferences.getInstance();
+
+      setState(() {
+        tripCode = prefs.getString('tripCode')!;
+      });
+
+      //Loads all trip info
+      DocumentSnapshot tripCodeSnapshot =
+      await FirebaseFirestore
+          .instance
+          .collection('trips')
+          .doc(tripCode)
+          .get();
+      await prefs.setString('tripCreator', tripCodeSnapshot.get('creator'));
+
+      userIds = tripCodeSnapshot.get('users');
+      List<String> stringUserIdsList = userIds.map((item) => item.toString()).toList();
+      await prefs.setStringList('userIDs', stringUserIdsList);
+
+      //loads and save all usernames
+      for(int i=0; i<userIds.length; i++){
+        DocumentSnapshot userSnapshot =
+        await FirebaseFirestore
+            .instance
+            .collection('userData')
+            .doc(userIds[i])
+            .get();
+
+        userNames.add(userSnapshot.get('name'));
+      }
+      List<String> stringUserNamesList = userNames.map((item) => item.toString()).toList();
+      await prefs.setStringList('userNames', stringUserNamesList);
+
+      //lastEdited = DateTime.parse(prefs.getString('lastEdited') ?? '');
+
+      //This was inside backupData
+      if(prefs.containsKey('titles')){
+
+        print('tracker3');
+        titles = prefs.getStringList('titles') ?? [];
+        descriptions = prefs.getStringList('descriptions') ?? [];
+        amounts = prefs.getStringList('amounts') ?? [];
+        times = prefs.getStringList('times') ?? [];
+        providerNames = prefs.getStringList('providerNames') ?? [];
+        providerIDs = prefs.getStringList('providerIDs') ?? [];
+        docIDs = prefs.getStringList('docIDs') ?? [];
+        isChanged = prefs.getStringList('isChanged') ?? [];
+      }
+    }
+  }
+
+  Future<void> backupData() async {
+
+    if(connection){
+
+      final prefs = await SharedPreferences.getInstance();
+
+      //
+
+      if(isChanged.isNotEmpty){
+        for(int index=0; index<isChanged.length; index++){
+          if(index < isChanged.length && isChanged[index] == 'changed'){
+
+            print('tracker4');
+            /*ManageCRUDOperations().uploadInfo(
+                titles[index],
+                descriptions[index],
+                double.parse(amounts[index]),
+                providerIDs[index],
+                providerNames[index],
+                docIDs[index],
+                tripCode
+            );*/
+            await FirebaseFirestore
+                .instance
+                .collection('trips')
+                .doc(tripCode)
+                .collection('Events')
+                .doc()
+                .set({
+              'title': titles[index],
+              'description': descriptions[index],
+              'amount': double.parse(amounts[index]),
+              'time': DateTime.now(),
+              'addedBy': FirebaseAuth.instance.currentUser!.uid,
+              'providedBy': providerIDs[index],
+            });
+
+            print('tracker5');
+
+            setState(() {
+              if(index < isChanged.length){
+                isChanged[index] = 'notChanged';
+              }
+            });
+
+            print('tracker6');
+          }
+        }
+
+        print('tracker7');
+
+        //Also Save new isChanged lists into prefs
+        await prefs.setStringList('isChanged', isChanged);
+      }
+
+      print('tracker8');
+    }
+
+
+    print('tracker9');
+    setState(() {
+      _isLoading = false;
+    });
+
+    print('tracker10');
+  }
+
+  Future<void> saveDataToSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('titles', titles);
+    await prefs.setStringList('descriptions', descriptions);
+    await prefs.setStringList('amounts', amounts);
+    await prefs.setStringList('times', times);
+    await prefs.setStringList('providerNames', providerNames);
+    await prefs.setStringList('providerIDs', providerIDs);
+    await prefs.setStringList('docIDs', docIDs);
+    await prefs.setStringList('isChanged', isChanged);
+
+    print(titles);
+  }
+
+  Future<void> getDataFromSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    titles = prefs.getStringList('titles')!;
+    descriptions = prefs.getStringList('descriptions')!;
+    amounts = prefs.getStringList('amounts')!;
+    times = prefs.getStringList('times')!;
+    providerNames = prefs.getStringList('providerNames')!;
+    providerIDs = prefs.getStringList('providerIDs')!;
+    docIDs = prefs.getStringList('docIDs')!;
+    isChanged = prefs.getStringList('isChanged')!;
+
+// Create a list of Map entries to associate each item with its time
+    List<Map<String, dynamic>> itemsWithTimes = [];
+
+    for (int i = 0; i < times.length; i++) {
+      itemsWithTimes.add({
+        'title': titles[i],
+        'description': descriptions[i],
+        'amount': amounts[i],
+        'time': DateTime.parse(times[i]),
+        'providerName': providerNames[i],
+        'providerID': providerIDs[i],
+        'docID': docIDs[i],
+        'isChanged': isChanged[i],
+      });
+    }
+
+// Sort the list by time
+    itemsWithTimes.sort((a, b) => b['time'].compareTo(a['time']));
+
+// Update the lists with sorted data
+    titles = itemsWithTimes.map((item) => item['title'].toString()).toList();
+    descriptions = itemsWithTimes.map((item) => item['description'].toString()).toList();
+    amounts = itemsWithTimes.map((item) => item['amount'].toString()).toList();
+    times = itemsWithTimes.map((item) => item['time'].toString()).toList();
+    providerNames = itemsWithTimes.map((item) => item['providerName'].toString()).toList();
+    providerIDs = itemsWithTimes.map((item) => item['providerID'].toString()).toList();
+    docIDs = itemsWithTimes.map((item) => item['docID'].toString()).toList();
+    isChanged = itemsWithTimes.map((item) => item['isChanged'].toString()).toList();
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _handleRefresh() async {
+    final navigator = Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => BottomBar(bottomIndex: 0),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return child;
+        },
+      ),
+    );
+
+    // Simulate a delay for the refresh indicator
+    await Future.delayed(const Duration(seconds: 1));
+
+    // Reload the same page by pushing a new instance onto the stack
+    navigator;
+  }
+
+  Future<bool> handleWillPop() async {
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: handleWillPop,
+      child: Scaffold(
+        appBar: HomeAppBar(connected: connection),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: const HomeFloatingActionButton(),
+        body: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          child: _isLoading ?
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Lottie.asset(
+                  'assets/lottie/backup.json',
+                  height: 300,
+                  width: 200,
+                ),
+                const Text(
+                  "Please Wait 'Backing Up'\nOffline Data",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                )
+              ],
+            ),
+          )
+              :
+          //SingleChildScrollView
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                //Internet Checker
+                if(!connection)...[
+                  Container(
+                    color: Colors.red,
+                    width: double.infinity,
+                    child: const Text(
+                      "no internet connection",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                ],
+
+                // Search TextField
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Card(
+                    elevation: 0,
+                    child: SizedBox(
+                      height: 40,
+                      child: SizedBox(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(50),
+                              borderSide: const BorderSide(
+                                color: Colors.black,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(50),
+                              borderSide: const BorderSide(
+                                color: Colors.grey,
+                              ),
+                            ), //InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.only(left: 15),
+                            //focusedBorder: InputBorder.none,
+                            //enabledBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            hintText: "Search Events . . .",
+                            hintStyle: TextStyle(
+                              fontSize: 13.0,
+                              color: Colors.grey.shade500,
+                            ),
+                            suffixIcon: _focusNode.hasFocus ?
+                            GestureDetector(
+                                onTap: () {
+                                  setState(() {
+
+                                  });
+                                },
+                                child: Icon(
+                                  Icons.cancel,
+                                  size: 15,
+                                  color: Colors.grey.shade400,
+                                )
+                            )
+                                :
+                            GestureDetector(
+                                onTap: () {
+
+                                },
+                                child: const Icon(
+                                    Icons.search_rounded
+                                )
+                            ),
+                          ),
+                          controller: searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _isSearching = true;
+                            });
+                            // Start the search when the user enters a value in the text field
+                            // Perform the search
+                          },
+                          onSubmitted: (value) {
+
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                //Search Loading
+                _isSearching ? LinearProgressIndicator(
+                  color: Colors.blue.shade100,
+                )
+                    : const SizedBox(
+                  height: 0,
+                  width: 0,
+                ),
+                const SizedBox(height: 15,),
+
+                if(connection)...[
+                  SingleChildScrollView(
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: loadItemFromFutureBuilder()
+                    ),
+                  )
+                ]
+                else...[
+                  //Show From Prefs
+                  Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: loadItemFromPrefs()
+                  )
+                ],
+
+                const SizedBox(height: 100,),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget loadItemFromFutureBuilder() {
+
+    titles.clear();
+    descriptions.clear();
+    amounts.clear();
+    times.clear();
+    providerNames.clear();
+    providerIDs.clear();
+    docIDs.clear();
+    isChanged.clear();
+
+    return FutureBuilder(
+      future: FirebaseFirestore
+          .instance
+          .collection('trips')
+          .doc(tripCode).collection('Events')
+          .get(),
+      builder: (context, snapshot) {
+        if(snapshot.hasData){
+          if(snapshot.data!.docs.isEmpty){
+            return const Center(
+              child: Text(
+                'No Events Yet',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 13,
+                ),
+              ),
+            );
+          }
+          else{
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: snapshot.data!.docs.length,
+              itemBuilder: (context, index) {
+
+                // Sort the documents by timestamp and reverse the list
+                final sortedDocs = snapshot.data!.docs
+                    .map((doc) => {
+                  'doc': doc,
+                  'time': (doc.get('time')).toDate(),
+                }).toList()
+                  ..sort((a, b) => b['time']!.compareTo(a['time']));
+
+                print('error before');
+
+                final sortedDoc = sortedDocs[index];
+                String docID = sortedDoc['doc'].id;
+                String title = sortedDoc['doc'].get('title');
+                String description = sortedDoc['doc'].get('description');
+                double amount = sortedDoc['doc'].get('amount');
+                DateTime time = sortedDoc['time'];
+                String addedBy = sortedDoc['doc'].get('addedBy');
+                String providedBy = sortedDoc['doc'].get('providedBy');
+
+                /*String docID = snapshot.data!.docs[index].id;
+              String title = snapshot.data?.docs[index].get('title');
+              String description = snapshot.data?.docs[index].get('description');
+              double amount = snapshot.data?.docs[index].get('amount');
+              DateTime time = (snapshot.data?.docs[index].get('time')).toDate();
+              String addedBy = snapshot.data?.docs[index].get('addedBy');
+              String providedBy = snapshot.data?.docs[index].get('providedBy');*/
+
+                return FutureBuilder(
+                  future: FirebaseFirestore
+                      .instance
+                      .collection('userData')
+                      .doc(providedBy)
+                      .get(),
+                  builder: (context, providerSnapshot) {
+
+                    String providerName = providerSnapshot.data?.get('name');
+
+                    titles.add(title);
+                    descriptions.add(description);
+                    amounts.add(amount.toString());
+                    times.add(time.toString());
+                    providerNames.add(providerName);
+                    providerIDs.add(providedBy);
+                    docIDs.add(docID);
+                    isChanged.add('notChanged');
+
+                    if(providerSnapshot.hasData){
+
+                      //Saves Data Locally
+                      saveDataToSharedPreferences();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        child: ListTile(
+                          onTap: () {
+                            Get.to(
+                                    () => CRUDEvent(
+                                  title: title,
+                                  amount: amount.toString(),
+                                  description: description,
+                                  provider: providerName,
+                                  docID: docID,
+                                ),
+                                transition: Transition.fade
+                            );
+                          },
+                          //user image
+                          leading: SizedBox(
+                            height: 50,
+                            width: 50,
+                            child: FutureBuilder(
+                              future: FirebaseFirestore
+                                  .instance
+                                  .collection('userData')
+                                  .doc(addedBy)
+                                  .get(),
+                              builder: (context, adderSnapshot) {
+                                //String adderImageUrl = adderSnapshot.data!.get('imageURL') ?? 'PicAlt';
+                                if(adderSnapshot.hasData){
+                                  return ClipRRect(
+                                    borderRadius: BorderRadius.circular(50),
+                                    child: Image.network(
+                                        adderSnapshot.data!.get('imageURL')
+                                    ),
+                                  );
+                                }
+                                else if(snapshot.connectionState == ConnectionState.waiting){
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                                else{
+                                  return const Center(
+                                    child: Text('Error Loading Data'),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          title: Text(
+                            title,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                overflow: TextOverflow.ellipsis
+                            ),
+                          ),
+                          //user name
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                DateFormat('hh:mm a, EE, dd MMM,yy').format(time),
+                                style: const TextStyle(
+                                    color: Colors.grey,
+                                    overflow: TextOverflow.ellipsis
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  const Text('Provider: '),
+                                  Text(
+                                    providerName,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        overflow: TextOverflow.ellipsis
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                          trailing: Text(
+                            '${amount.toStringAsFixed(0)}/-',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 25,
+                                overflow: TextOverflow.ellipsis
+                            ),
+                          ),
+                          tileColor: Colors.blue.shade50,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)
+                          ),
+                        ),
+                      );
+                    }
+                    else if(providerSnapshot.connectionState == ConnectionState.waiting){
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    else{
+                      return const Center(
+                        child: Text('Error Loading Data'),
+                      );
+                    }
+                  },
+                );
+              },
+            );
+          }
+        }
+        else if(snapshot.connectionState == ConnectionState.waiting){
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        else{
+          return const Center(
+            child: Text('Error Loading Data'),
+          );
+        }
+      },
+    );
+  }
+
+  Widget loadItemFromPrefs() {
+
+    //getDataFromSharedPreferences();
+
+    if(titles.isEmpty){
+      return const Center(
+        child: Text(
+          'No Events Yet',
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 13,
+          ),
+        ),
+      );
+    }
+    else{
+      return ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: titles.length,
+        itemBuilder: (context, index) {
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: ListTile(
+              onTap: () {
+                Get.to(
+                        () => CRUDEvent(
+                      title: titles[index],
+                      amount: amounts[index].toString(),
+                      description: descriptions[index],
+                      provider: providerNames[index],
+                      docID: docIDs[index],
+                    ),
+                    transition: Transition.fade
+                );
+              },
+              //user image
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(50),
+                child: const Icon(Icons.person),
+              ),
+              title: Text(
+                titles[index],
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    overflow: TextOverflow.ellipsis
+                ),
+              ),
+              //user name
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DateFormat('hh:mm a, EE, dd MMM,yy').format(DateTime.parse(times[index])),
+                    style: const TextStyle(
+                        color: Colors.grey,
+                        overflow: TextOverflow.ellipsis
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      const Text('Provider: '),
+                      Text(
+                        providerNames[index],
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            overflow: TextOverflow.ellipsis
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+              trailing: Text(
+                '${amounts[index]}/-',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 25,
+                    overflow: TextOverflow.ellipsis
+                ),
+              ),
+              tileColor: Colors.blue.shade50,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)
+              ),
+            ),
+          );
+        },
+      );
+    }
+  }
+}
