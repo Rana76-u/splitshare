@@ -36,10 +36,9 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                 borderRadius: BorderRadius.circular(50),
                 child: !connected
                     ?
-                /*Lottie.asset(
+                Lottie.asset(
                     'assets/lottie/profile.json'
-                    )*/
-                const Text('Profile Photo')
+                )
                     :
                 GestureDetector(
                   onTap: () {

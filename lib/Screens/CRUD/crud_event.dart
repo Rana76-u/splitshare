@@ -257,29 +257,32 @@ class _CRUDEventState extends State<CRUDEvent> {
                     scrollDirection: Axis.horizontal,
                     itemCount: userNames?.length,
                     itemBuilder: (context, index) {
-                      return TextButton(
-                        onPressed: (){
-                          setState(() {
-                            selectedProviderFlag = index;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: TextButton(
+                          onPressed: (){
+                            setState(() {
+                              selectedProviderFlag = index;
 
-                            providerFlag = false;
-                            selectedUserID = userIDs![index];
-                          });
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateColor.resolveWith(
-                                  (states) => selectedProviderFlag == index ? Colors.deepPurple : Colors.deepPurple.withOpacity(0.08)
+                              providerFlag = false;
+                              selectedUserID = userIDs![index];
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateColor.resolveWith(
+                                    (states) => selectedProviderFlag == index ? Colors.deepPurple : Colors.deepPurple.withOpacity(0.08)
+                            ),
+
                           ),
-
-                        ),
-                        child: Center(
-                            child: Text(
-                              userNames![index],
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                color: selectedProviderFlag == index ? Colors.white : Colors.black
-                              ),
-                            )
+                          child: Center(
+                              child: Text(
+                                userNames![index],
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  color: selectedProviderFlag == index ? Colors.white : Colors.black
+                                ),
+                              )
+                          ),
                         ),
                       );
                     },
@@ -327,12 +330,12 @@ class _CRUDEventState extends State<CRUDEvent> {
     );
   }
 
-
   Widget textFieldWidget(TextEditingController textEditingController, String hint) {
     return SizedBox(
       height: 60,
       child: TextField(
         controller: textEditingController,
+        autofocus: true,
         decoration: InputDecoration(
           focusedBorder: const OutlineInputBorder(
               borderSide: BorderSide.none

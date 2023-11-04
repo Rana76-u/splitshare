@@ -26,8 +26,12 @@ class _HomePageState extends State<HomePage> {
   Timer? connectionTimer;
 
   bool connection = true;
-  bool _isSearching = false;
+  final bool _isSearching = false;
   bool _isLoading = false;
+  bool isBackupInProgress = false;
+  bool providerFlag = false;
+  int selectedProviderFlag = -1;
+  String selectedUserID = '';
 
   String tripCode = '';
   DateTime lastEdited = DateTime.now();
@@ -40,6 +44,9 @@ class _HomePageState extends State<HomePage> {
   List<String> providerIDs = [];
   List<String> docIDs = [];
   List<String> isChanged = [];
+  List<String> userNames = [];
+  List<String>? userIDs = [];
+  List<int> searchIndexes = [];
 
   TextEditingController searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -47,7 +54,6 @@ class _HomePageState extends State<HomePage> {
   @override
   initState(){
     _isLoading = true;
-    print('tracker1');
     startConnectionCheckTimer();
     loadTripInfo();
     backupData();
@@ -77,13 +83,15 @@ class _HomePageState extends State<HomePage> {
         connection = hasConnection;
       });
 
-      if(hasConnection){
-
-        print('tracker2');
-        loadTripInfo();
-        backupData();
+      if (hasConnection) {
+        if (!isBackupInProgress) {
+          isBackupInProgress = true;
+          backupData().then((_) {
+            isBackupInProgress = false;
+          });
+        }
       }
-      else{
+      else {
         getDataFromSharedPreferences();
       }
     }
@@ -99,6 +107,23 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         tripCode = prefs.getString('tripCode')!;
       });
+      //This was inside backupData
+      if(prefs.containsKey('titles')){
+        titles = prefs.getStringList('titles') ?? [];
+        descriptions = prefs.getStringList('descriptions') ?? [];
+        amounts = prefs.getStringList('amounts') ?? [];
+        times = prefs.getStringList('times') ?? [];
+        providerNames = prefs.getStringList('providerNames') ?? [];
+        providerIDs = prefs.getStringList('providerIDs') ?? [];
+        docIDs = prefs.getStringList('docIDs') ?? [];
+        isChanged = prefs.getStringList('isChanged') ?? [];
+      }
+
+      loadUsers();
+
+      for(int i=0; i<titles.length; i++){
+        searchIndexes.add(i);
+      }
 
       //Loads all trip info
       DocumentSnapshot tripCodeSnapshot =
@@ -128,36 +153,26 @@ class _HomePageState extends State<HomePage> {
       await prefs.setStringList('userNames', stringUserNamesList);
 
       //lastEdited = DateTime.parse(prefs.getString('lastEdited') ?? '');
-
-      //This was inside backupData
-      if(prefs.containsKey('titles')){
-
-        print('tracker3');
-        titles = prefs.getStringList('titles') ?? [];
-        descriptions = prefs.getStringList('descriptions') ?? [];
-        amounts = prefs.getStringList('amounts') ?? [];
-        times = prefs.getStringList('times') ?? [];
-        providerNames = prefs.getStringList('providerNames') ?? [];
-        providerIDs = prefs.getStringList('providerIDs') ?? [];
-        docIDs = prefs.getStringList('docIDs') ?? [];
-        isChanged = prefs.getStringList('isChanged') ?? [];
-      }
     }
   }
 
-  Future<void> backupData() async {
+  void loadUsers() async {
+    final prefs = await SharedPreferences.getInstance();
 
+    userNames = prefs.getStringList('userNames')!;
+    userIDs = prefs.getStringList('userIDs');
+  }
+
+  Future<void> backupData() async {
     if(connection){
 
       final prefs = await SharedPreferences.getInstance();
 
-      //
 
       if(isChanged.isNotEmpty){
         for(int index=0; index<isChanged.length; index++){
           if(index < isChanged.length && isChanged[index] == 'changed'){
 
-            print('tracker4');
             /*ManageCRUDOperations().uploadInfo(
                 titles[index],
                 descriptions[index],
@@ -167,7 +182,7 @@ class _HomePageState extends State<HomePage> {
                 docIDs[index],
                 tripCode
             );*/
-            await FirebaseFirestore
+            FirebaseFirestore
                 .instance
                 .collection('trips')
                 .doc(tripCode)
@@ -182,34 +197,22 @@ class _HomePageState extends State<HomePage> {
               'providedBy': providerIDs[index],
             });
 
-            print('tracker5');
-
             setState(() {
               if(index < isChanged.length){
                 isChanged[index] = 'notChanged';
               }
             });
-
-            print('tracker6');
           }
         }
-
-        print('tracker7');
 
         //Also Save new isChanged lists into prefs
         await prefs.setStringList('isChanged', isChanged);
       }
-
-      print('tracker8');
     }
 
-
-    print('tracker9');
     setState(() {
       _isLoading = false;
     });
-
-    print('tracker10');
   }
 
   Future<void> saveDataToSharedPreferences() async {
@@ -222,20 +225,20 @@ class _HomePageState extends State<HomePage> {
     await prefs.setStringList('providerIDs', providerIDs);
     await prefs.setStringList('docIDs', docIDs);
     await prefs.setStringList('isChanged', isChanged);
-
-    print(titles);
   }
 
   Future<void> getDataFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+
+    providerNames = prefs.getStringList('providerNames')!;
+    isChanged = prefs.getStringList('isChanged')!;
+
     titles = prefs.getStringList('titles')!;
     descriptions = prefs.getStringList('descriptions')!;
     amounts = prefs.getStringList('amounts')!;
     times = prefs.getStringList('times')!;
-    providerNames = prefs.getStringList('providerNames')!;
     providerIDs = prefs.getStringList('providerIDs')!;
     docIDs = prefs.getStringList('docIDs')!;
-    isChanged = prefs.getStringList('isChanged')!;
 
 // Create a list of Map entries to associate each item with its time
     List<Map<String, dynamic>> itemsWithTimes = [];
@@ -293,6 +296,39 @@ class _HomePageState extends State<HomePage> {
     return false;
   }
 
+  void performSearch() {
+    setState(() {
+      searchIndexes.clear();
+
+      if(searchController.text == ''){
+        for(int i=0; i<titles.length; i++){
+          searchIndexes.add(i);
+        }
+      }
+      else{
+        for(int i=0; i<titles.length; i++){
+          if(titles[i].toLowerCase().contains(searchController.text.toLowerCase())){
+            searchIndexes.add(i);
+          }
+        }
+      }
+
+      if(selectedProviderFlag != -1){
+        searchIndexes.clear();
+
+        for(int i=0; i<providerNames.length; i++){
+          if(userNames[selectedProviderFlag].toLowerCase() == providerNames[i].toLowerCase()){
+            searchIndexes.add(i);
+          }
+        }
+      }else{
+        for(int i=0; i<titles.length; i++){
+          searchIndexes.add(i);
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -345,87 +381,7 @@ class _HomePageState extends State<HomePage> {
                   )
                 ],
 
-                // Search TextField
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Card(
-                    elevation: 0,
-                    child: SizedBox(
-                      height: 40,
-                      child: SizedBox(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(50),
-                              borderSide: const BorderSide(
-                                color: Colors.black,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(50),
-                              borderSide: const BorderSide(
-                                color: Colors.grey,
-                              ),
-                            ), //InputBorder.none,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.only(left: 15),
-                            //focusedBorder: InputBorder.none,
-                            //enabledBorder: InputBorder.none,
-                            errorBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            hintText: "Search Events . . .",
-                            hintStyle: TextStyle(
-                              fontSize: 13.0,
-                              color: Colors.grey.shade500,
-                            ),
-                            suffixIcon: _focusNode.hasFocus ?
-                            GestureDetector(
-                                onTap: () {
-                                  setState(() {
-
-                                  });
-                                },
-                                child: Icon(
-                                  Icons.cancel,
-                                  size: 15,
-                                  color: Colors.grey.shade400,
-                                )
-                            )
-                                :
-                            GestureDetector(
-                                onTap: () {
-
-                                },
-                                child: const Icon(
-                                    Icons.search_rounded
-                                )
-                            ),
-                          ),
-                          controller: searchController,
-                          onChanged: (value) {
-                            setState(() {
-                              _isSearching = true;
-                            });
-                            // Start the search when the user enters a value in the text field
-                            // Perform the search
-                          },
-                          onSubmitted: (value) {
-
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                //Search Loading
-                _isSearching ? LinearProgressIndicator(
-                  color: Colors.blue.shade100,
-                )
-                    : const SizedBox(
-                  height: 0,
-                  width: 0,
-                ),
-                const SizedBox(height: 15,),
+                searchFilterWidget(),
 
                 if(connection)...[
                   SingleChildScrollView(
@@ -449,6 +405,151 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget searchFilterWidget() {
+    return Column(
+      children: [
+        // Search TextField
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Card(
+            elevation: 0,
+            child: SizedBox(
+              height: 40,
+              child: SizedBox(
+                child: TextField(
+                  decoration: InputDecoration(
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50),
+                      borderSide: const BorderSide(
+                        color: Colors.black,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50),
+                      borderSide: const BorderSide(
+                        color: Colors.grey,
+                      ),
+                    ), //InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.only(left: 15),
+                    //focusedBorder: InputBorder.none,
+                    //enabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    hintText: "Search Events . . .",
+                    hintStyle: TextStyle(
+                      fontSize: 13.0,
+                      color: Colors.grey.shade500,
+                    ),
+                    suffixIcon: _focusNode.hasFocus ?
+                    GestureDetector(
+                        onTap: () {
+                          setState(() {
+
+                          });
+                        },
+                        child: Icon(
+                          Icons.cancel,
+                          size: 15,
+                          color: Colors.grey.shade400,
+                        )
+                    )
+                        :
+                    GestureDetector(
+                        onTap: () {
+
+                        },
+                        child: const Icon(
+                            Icons.search_rounded
+                        )
+                    ),
+                  ),
+                  controller: searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      //necessary for search
+                      selectedProviderFlag = -1;
+                      performSearch();
+                    });
+                    // Start the search when the user enters a value in the text field
+                    // Perform the search
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        //Search Loading
+        _isSearching ? LinearProgressIndicator(
+          color: Colors.blue.shade100,
+        )
+            : const SizedBox(
+          height: 0,
+          width: 0,
+        ),
+
+        Padding(
+          padding: const EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 10),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              color: providerFlag ? Colors.red.shade50 : Colors.white,
+            ),
+            child: SizedBox(
+              height: 50,
+              //MediaQuery.of(context).size.width*0.9 - 40,
+              child: ListView.builder(
+                shrinkWrap: true,
+                scrollDirection: Axis.horizontal,
+                itemCount: userNames.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 5),
+                    child: TextButton(
+                      onPressed: (){
+                        setState(() {
+                          if(selectedProviderFlag == index){
+                            selectedProviderFlag = -1;
+                            searchController.text = '';
+                            performSearch();
+                          }
+                          else{
+                            searchController.text = '';
+                            selectedProviderFlag = index;
+
+                            providerFlag = false;
+                            selectedUserID = userIDs![index];
+                            performSearch();
+                          }
+                        });
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateColor.resolveWith(
+                                (states) => selectedProviderFlag == index ? Colors.deepPurple : Colors.deepPurple.withOpacity(0.08)
+                        ),
+
+                      ),
+                      child: Center(
+                          child: Text(
+                            userNames[index],
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: selectedProviderFlag == index ? Colors.white : Colors.black
+                            ),
+                          )
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -497,16 +598,14 @@ class _HomePageState extends State<HomePage> {
                 }).toList()
                   ..sort((a, b) => b['time']!.compareTo(a['time']));
 
-                print('error before');
-
                 final sortedDoc = sortedDocs[index];
-                String docID = sortedDoc['doc'].id;
-                String title = sortedDoc['doc'].get('title');
-                String description = sortedDoc['doc'].get('description');
-                double amount = sortedDoc['doc'].get('amount');
-                DateTime time = sortedDoc['time'];
-                String addedBy = sortedDoc['doc'].get('addedBy');
-                String providedBy = sortedDoc['doc'].get('providedBy');
+                String docID = sortedDoc['doc'].id ?? 'null';
+                String title = sortedDoc['doc'].get('title') ?? 'null';
+                String description = sortedDoc['doc'].get('description') ?? 'null';
+                double amount = sortedDoc['doc'].get('amount') ?? 0.0;
+                DateTime time = sortedDoc['time'] ?? DateTime.now();
+                String addedBy = sortedDoc['doc'].get('addedBy') ?? 'null';
+                String providedBy = sortedDoc['doc'].get('providedBy') ?? 'null';
 
                 /*String docID = snapshot.data!.docs[index].id;
               String title = snapshot.data?.docs[index].get('title');
@@ -524,16 +623,18 @@ class _HomePageState extends State<HomePage> {
                       .get(),
                   builder: (context, providerSnapshot) {
 
-                    String providerName = providerSnapshot.data?.get('name');
+                    String providerName = providerSnapshot.data?.get('name') ?? 'null';
 
-                    titles.add(title);
-                    descriptions.add(description);
-                    amounts.add(amount.toString());
-                    times.add(time.toString());
-                    providerNames.add(providerName);
-                    providerIDs.add(providedBy);
-                    docIDs.add(docID);
-                    isChanged.add('notChanged');
+                    if(providerName != 'null'){
+                      titles.add(title);
+                      descriptions.add(description);
+                      amounts.add(amount.toString());
+                      times.add(time.toString());
+                      providerNames.add(providerName);
+                      providerIDs.add(providedBy);
+                      docIDs.add(docID);
+                      isChanged.add('notChanged');
+                    }
 
                     if(providerSnapshot.hasData){
 
@@ -638,7 +739,7 @@ class _HomePageState extends State<HomePage> {
                     }
                     else if(providerSnapshot.connectionState == ConnectionState.waiting){
                       return const Center(
-                        child: CircularProgressIndicator(),
+                        child: LinearProgressIndicator(),
                       );
                     }
                     else{
@@ -654,7 +755,7 @@ class _HomePageState extends State<HomePage> {
         }
         else if(snapshot.connectionState == ConnectionState.waiting){
           return const Center(
-            child: CircularProgressIndicator(),
+            child: LinearProgressIndicator(),
           );
         }
         else{
@@ -667,8 +768,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget loadItemFromPrefs() {
-
-    //getDataFromSharedPreferences();
 
     if(titles.isEmpty){
       return const Center(
@@ -687,74 +786,78 @@ class _HomePageState extends State<HomePage> {
         physics: const NeverScrollableScrollPhysics(),
         itemCount: titles.length,
         itemBuilder: (context, index) {
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 5),
-            child: ListTile(
-              onTap: () {
-                Get.to(
-                        () => CRUDEvent(
-                      title: titles[index],
-                      amount: amounts[index].toString(),
-                      description: descriptions[index],
-                      provider: providerNames[index],
-                      docID: docIDs[index],
-                    ),
-                    transition: Transition.fade
-                );
-              },
-              //user image
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: const Icon(Icons.person),
-              ),
-              title: Text(
-                titles[index],
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    overflow: TextOverflow.ellipsis
-                ),
-              ),
-              //user name
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    DateFormat('hh:mm a, EE, dd MMM,yy').format(DateTime.parse(times[index])),
-                    style: const TextStyle(
-                        color: Colors.grey,
-                        overflow: TextOverflow.ellipsis
-                    ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      const Text('Provider: '),
-                      Text(
-                        providerNames[index],
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            overflow: TextOverflow.ellipsis
-                        ),
+          if(searchIndexes.contains(index)){
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: ListTile(
+                onTap: () {
+                  Get.to(
+                          () => CRUDEvent(
+                        title: titles[index],
+                        amount: amounts[index].toString(),
+                        description: descriptions[index],
+                        provider: providerNames[index],
+                        docID: docIDs[index],
                       ),
-                    ],
-                  )
-                ],
-              ),
-              trailing: Text(
-                '${amounts[index]}/-',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25,
-                    overflow: TextOverflow.ellipsis
+                      transition: Transition.fade
+                  );
+                },
+                //user image
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(50),
+                  child: const Icon(Icons.offline_bolt_rounded),
+                ),
+                title: Text(
+                  titles[index],
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      overflow: TextOverflow.ellipsis
+                  ),
+                ),
+                //user name
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DateFormat('hh:mm a, EE, dd MMM,yy').format(DateTime.parse(times[index])),
+                      style: const TextStyle(
+                          color: Colors.grey,
+                          overflow: TextOverflow.ellipsis
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        const Text('Provider: '),
+                        Text(
+                          providerNames[index],
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              overflow: TextOverflow.ellipsis
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+                trailing: Text(
+                  '${amounts[index]}/-',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25,
+                      overflow: TextOverflow.ellipsis
+                  ),
+                ),
+                tileColor: Colors.blue.shade50,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)
                 ),
               ),
-              tileColor: Colors.blue.shade50,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)
-              ),
-            ),
-          );
+            );
+          }
+          else{
+            return const SizedBox();
+          }
         },
       );
     }
