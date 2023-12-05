@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import 'package:splitshare/Screens/Profile/profile.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -36,9 +35,10 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                 borderRadius: BorderRadius.circular(50),
                 child: !connected
                     ?
-                Lottie.asset(
+                /*Lottie.asset(
                     'assets/lottie/profile.json'
-                )
+                )*/
+                const Icon(Icons.person)
                     :
                 GestureDetector(
                   onTap: () {

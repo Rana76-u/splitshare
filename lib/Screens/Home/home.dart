@@ -312,21 +312,24 @@ class _HomePageState extends State<HomePage> {
           }
         }
       }
+    });
+  }
 
-      if(selectedProviderFlag != -1){
-        searchIndexes.clear();
+  void performProviderSearch(int index){
+    if(index != -1){
+      searchIndexes.clear();
 
-        for(int i=0; i<providerNames.length; i++){
-          if(userNames[selectedProviderFlag].toLowerCase() == providerNames[i].toLowerCase()){
-            searchIndexes.add(i);
-          }
-        }
-      }else{
-        for(int i=0; i<titles.length; i++){
+      for(int i=0; i<providerNames.length; i++){
+        if(userNames[index].toLowerCase() == providerNames[i].toLowerCase()){
           searchIndexes.add(i);
         }
       }
-    });
+    }
+    else{
+      for(int i=0; i<titles.length; i++){
+        searchIndexes.add(i);
+      }
+    }
   }
 
   @override
@@ -471,7 +474,8 @@ class _HomePageState extends State<HomePage> {
                   onChanged: (value) {
                     setState(() {
                       //necessary for search
-                      selectedProviderFlag = -1;
+                      //selectedProviderFlag = -1;
+                      performProviderSearch(-1);
                       performSearch();
                     });
                     // Start the search when the user enters a value in the text field
@@ -515,7 +519,8 @@ class _HomePageState extends State<HomePage> {
                           if(selectedProviderFlag == index){
                             selectedProviderFlag = -1;
                             searchController.text = '';
-                            performSearch();
+                            performProviderSearch(-1);
+                            //performSearch();
                           }
                           else{
                             searchController.text = '';
@@ -523,7 +528,8 @@ class _HomePageState extends State<HomePage> {
 
                             providerFlag = false;
                             selectedUserID = userIDs![index];
-                            performSearch();
+                            //performSearch();
+                            performProviderSearch(index);
                           }
                         });
                       },
@@ -641,101 +647,106 @@ class _HomePageState extends State<HomePage> {
                       //Saves Data Locally
                       saveDataToSharedPreferences();
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 5),
-                        child: ListTile(
-                          onTap: () {
-                            Get.to(
-                                    () => CRUDEvent(
-                                  title: title,
-                                  amount: amount.toString(),
-                                  description: description,
-                                  provider: providerName,
-                                  docID: docID,
-                                ),
-                                transition: Transition.fade
-                            );
-                          },
-                          //user image
-                          leading: SizedBox(
-                            height: 50,
-                            width: 50,
-                            child: FutureBuilder(
-                              future: FirebaseFirestore
-                                  .instance
-                                  .collection('userData')
-                                  .doc(addedBy)
-                                  .get(),
-                              builder: (context, adderSnapshot) {
-                                //String adderImageUrl = adderSnapshot.data!.get('imageURL') ?? 'PicAlt';
-                                if(adderSnapshot.hasData){
-                                  return ClipRRect(
-                                    borderRadius: BorderRadius.circular(50),
-                                    child: Image.network(
-                                        adderSnapshot.data!.get('imageURL')
-                                    ),
-                                  );
-                                }
-                                else if(snapshot.connectionState == ConnectionState.waiting){
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                                else{
-                                  return const Center(
-                                    child: Text('Error Loading Data'),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                          title: Text(
-                            title,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                overflow: TextOverflow.ellipsis
-                            ),
-                          ),
-                          //user name
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                DateFormat('hh:mm a, EE, dd MMM,yy').format(time),
-                                style: const TextStyle(
-                                    color: Colors.grey,
-                                    overflow: TextOverflow.ellipsis
-                                ),
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  const Text('Provider: '),
-                                  Text(
-                                    providerName,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        overflow: TextOverflow.ellipsis
-                                    ),
+                      if(searchIndexes.contains(index)){
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 5),
+                          child: ListTile(
+                            onTap: () {
+                              Get.to(
+                                      () => CRUDEvent(
+                                    title: title,
+                                    amount: amount.toString(),
+                                    description: description,
+                                    provider: providerName,
+                                    docID: docID,
                                   ),
-                                ],
-                              )
-                            ],
-                          ),
-                          trailing: Text(
-                            '${amount.toStringAsFixed(0)}/-',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 25,
-                                overflow: TextOverflow.ellipsis
+                                  transition: Transition.fade
+                              );
+                            },
+                            //user image
+                            leading: SizedBox(
+                              height: 50,
+                              width: 50,
+                              child: FutureBuilder(
+                                future: FirebaseFirestore
+                                    .instance
+                                    .collection('userData')
+                                    .doc(addedBy)
+                                    .get(),
+                                builder: (context, adderSnapshot) {
+                                  //String adderImageUrl = adderSnapshot.data!.get('imageURL') ?? 'PicAlt';
+                                  if(adderSnapshot.hasData){
+                                    return ClipRRect(
+                                      borderRadius: BorderRadius.circular(50),
+                                      child: Image.network(
+                                          adderSnapshot.data!.get('imageURL')
+                                      ),
+                                    );
+                                  }
+                                  else if(snapshot.connectionState == ConnectionState.waiting){
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
+                                  else{
+                                    return const Center(
+                                      child: Text('Error Loading Data'),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                            title: Text(
+                              title,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  overflow: TextOverflow.ellipsis
+                              ),
+                            ),
+                            //user name
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  DateFormat('hh:mm a, EE, dd MMM,yy').format(time),
+                                  style: const TextStyle(
+                                      color: Colors.grey,
+                                      overflow: TextOverflow.ellipsis
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    const Text('Provider: '),
+                                    Text(
+                                      providerName,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          overflow: TextOverflow.ellipsis
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                            trailing: Text(
+                              '${amount.toStringAsFixed(0)}/-',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 25,
+                                  overflow: TextOverflow.ellipsis
+                              ),
+                            ),
+                            tileColor: Colors.blue.shade50,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)
                             ),
                           ),
-                          tileColor: Colors.blue.shade50,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)
-                          ),
-                        ),
-                      );
+                        );
+                      }
+                      else{
+                        return const SizedBox();
+                      }
                     }
                     else if(providerSnapshot.connectionState == ConnectionState.waiting){
                       return const Center(
