@@ -118,121 +118,126 @@ class _MyTripsState extends State<MyTrips> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const MyTripAppBar(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: const MyTripFloatingActionButton(),
-      body: _isLoading ?
-      const Center(
-        child: CircularProgressIndicator(),
-      )
-          :
-      SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              //Search Field
-              Card(
-                elevation: 0,
-                child: SizedBox(
-                  height: 40,
+    return WillPopScope(
+      onWillPop: () async {
+        return false;
+      },
+      child: Scaffold(
+        appBar: const MyTripAppBar(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: const MyTripFloatingActionButton(),
+        body: _isLoading ?
+        const Center(
+          child: CircularProgressIndicator(),
+        )
+            :
+        SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                //Search Field
+                Card(
+                  elevation: 0,
                   child: SizedBox(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(50),
-                          borderSide: const BorderSide(
-                            color: Colors.black,
+                    height: 40,
+                    child: SizedBox(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(50),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(50),
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                            ),
+                          ), //InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.only(left: 15),
+                          //focusedBorder: InputBorder.none,
+                          //enabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          hintText: "Search with Trip Names . . .",
+                          hintStyle: TextStyle(
+                            fontSize: 13.0,
+                            color: Colors.grey.shade500,
+                          ),
+                          suffixIcon: _focusNode.hasFocus ?
+                          GestureDetector(
+                              onTap: () {
+
+                              },
+                              child: Icon(
+                                Icons.cancel,
+                                size: 15,
+                                color: Colors.grey.shade400,
+                              )
+                          )
+                              :
+                          GestureDetector(
+                              onTap: () {
+
+                              },
+                              child: const Icon(
+                                  Icons.search_rounded
+                              )
                           ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(50),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                          ),
-                        ), //InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.only(left: 15),
-                        //focusedBorder: InputBorder.none,
-                        //enabledBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                        hintText: "Search with Trip Names . . .",
-                        hintStyle: TextStyle(
-                          fontSize: 13.0,
-                          color: Colors.grey.shade500,
-                        ),
-                        suffixIcon: _focusNode.hasFocus ?
-                        GestureDetector(
-                            onTap: () {
-
-                            },
-                            child: Icon(
-                              Icons.cancel,
-                              size: 15,
-                              color: Colors.grey.shade400,
-                            )
-                        )
-                            :
-                        GestureDetector(
-                            onTap: () {
-
-                            },
-                            child: const Icon(
-                                Icons.search_rounded
-                            )
-                        ),
+                        controller: searchController,
+                        onChanged: (query) {
+                          search(query);
+                        },
                       ),
-                      controller: searchController,
-                      onChanged: (query) {
-                        search(query);
-                      },
                     ),
                   ),
                 ),
-              ),
-              //Search Loading
-              _isSearching ? LinearProgressIndicator(
-                color: Colors.blue.shade100,
-              )
-                  :
-              const SizedBox(
-                height: 0,
-                width: 0,
-              ),
-
-              //Space
-              const SizedBox(height: 15,),
-
-              //My Trips Text
-              const Padding(
-                padding: EdgeInsets.only(left: 15, bottom: 7),
-                child: Text(
-                  '• My Trips',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold
-                  ),
-                ),
-              ),
-
-              if(matchedTripNames.isNotEmpty)...[
-                myTripItemBuilder()
-              ]
-              else...[
-                const Center(
-                  child: Text(
-                    'Nothings Here',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                        letterSpacing: 0.5
-                    ),
-                  ),
+                //Search Loading
+                _isSearching ? LinearProgressIndicator(
+                  color: Colors.blue.shade100,
                 )
+                    :
+                const SizedBox(
+                  height: 0,
+                  width: 0,
+                ),
+
+                //Space
+                const SizedBox(height: 15,),
+
+                //My Trips Text
+                const Padding(
+                  padding: EdgeInsets.only(left: 15, bottom: 7),
+                  child: Text(
+                    '• My Trips',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                ),
+
+                if(matchedTripNames.isNotEmpty)...[
+                  myTripItemBuilder()
+                ]
+                else...[
+                  const Center(
+                    child: Text(
+                      'Nothings Here',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                          letterSpacing: 0.5
+                      ),
+                    ),
+                  )
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

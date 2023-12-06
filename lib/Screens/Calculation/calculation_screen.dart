@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splitshare/Screens/Home/home_appbar.dart';
+import 'package:splitshare/Widgets/bottom_nav_bar.dart';
 
 class CalculationScreen extends StatefulWidget {
   const CalculationScreen({super.key});
@@ -177,7 +179,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
         if (i != j) {
           if (balance[i] < 0 && balance[j] > 0) {
             double amount = balance[i].abs() < balance[j] ? balance[i].abs() : balance[j];
-            print('Person ${i + 1} owes Person ${j + 1}: \$${amount.toStringAsFixed(2)}');
+            //print('Person ${i + 1} owes Person ${j + 1}: \$${amount.toStringAsFixed(2)}');
             splitLogs.add('${userIDs![i]} will give ${userIDs![j]} ${amount.toStringAsFixed(2)} Tk');
             balance[i] += amount;
             balance[j] -= amount;
@@ -189,22 +191,31 @@ class _CalculationScreenState extends State<CalculationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: HomeAppBar(connected: connection,),
-      body: _isLoading ?
-      const Center(
-        child: CircularProgressIndicator(),
-      )
-          :
-      SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15),
-          child: Column(
-            children: [
-              spendingCard(),
-              const SizedBox(height: 10,),
-              individualSpending()
-            ],
+    return WillPopScope(
+        onWillPop: () async {
+          Get.to(() => BottomBar(bottomIndex: 0),
+              transition: Transition.fade
+          );
+
+          return false;
+        },
+      child: Scaffold(
+        appBar: HomeAppBar(connected: connection,),
+        body: _isLoading ?
+        const Center(
+          child: CircularProgressIndicator(),
+        )
+            :
+        SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: Column(
+              children: [
+                spendingCard(),
+                const SizedBox(height: 10,),
+                individualSpending()
+              ],
+            ),
           ),
         ),
       ),
@@ -313,7 +324,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                       bottomLeft: Radius.circular(10)
                   ),
                 ),
-                color: Colors.blueGrey.shade300,//Color(0xFFe2fdff),
+                color: Colors.blueGrey.shade300,
                 child: ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),

@@ -719,11 +719,13 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     const Text('Provider: '),
-                                    Text(
-                                      providerName,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          overflow: TextOverflow.ellipsis
+                                    Expanded(
+                                      child: Text(
+                                        providerName,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            overflow: TextOverflow.ellipsis
+                                        ),
                                       ),
                                     ),
                                   ],

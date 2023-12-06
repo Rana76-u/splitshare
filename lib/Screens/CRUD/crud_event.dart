@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splitshare/Models/manage_crud_operations.dart';
 import 'package:splitshare/Widgets/loading.dart';
+
+import '../../Widgets/bottom_nav_bar.dart';
 
 // ignore: must_be_immutable
 class CRUDEvent extends StatefulWidget {
@@ -159,168 +162,177 @@ class _CRUDEventState extends State<CRUDEvent> {
 
     Loading loading = Loading();
 
-    return Scaffold(
-      appBar: AppBar(
-        actions: [
-          //Save Button
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: ElevatedButton(
-              onPressed: () async {
-                await uploadInfo();
-              },
-              style: ButtonStyle(
-                  backgroundColor: MaterialStateColor.resolveWith((states) => const Color(0xFF8F00FF))
-              ),
-              child: const Text(
-                'Save',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold
+    return WillPopScope(
+        onWillPop: () async {
+          Get.to(() => BottomBar(bottomIndex: 0),
+              transition: Transition.fade
+          );
+
+          return false;
+        },
+      child: Scaffold(
+        appBar: AppBar(
+          actions: [
+            //Save Button
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: ElevatedButton(
+                onPressed: () async {
+                  await uploadInfo();
+                },
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateColor.resolveWith((states) => const Color(0xFF8F00FF))
+                ),
+                child: const Text(
+                  'Save',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold
+                  ),
                 ),
               ),
             ),
-          ),
 
-          //3Dot Icon
-          popUpMenu()
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: _isLoading ?
-        loading.central(context)
-            :
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            //3Dot Icon
+            popUpMenu()
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: _isLoading ?
+          loading.central(context)
+              :
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
 
-              const SizedBox(height: 10,),
+                const SizedBox(height: 10,),
 
-              //title
-              textFieldWidget(titleController, 'Title'),
+                //title
+                textFieldWidget(titleController, 'Title'),
 
-              const SizedBox(height: 5,),
+                const SizedBox(height: 5,),
 
-              //Amount
-              SizedBox(
-                height: 60,
-                child: TextField(
-                  controller: amountController,
-                  onChanged: (value) {
-                    setState(() {
-                      amountFLag = false;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    focusedBorder: const OutlineInputBorder(
-                        borderSide: BorderSide.none
-                    ),
-                    enabledBorder:  const OutlineInputBorder(
-                        borderSide: BorderSide.none
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.onetwothree,
-                      color: Colors.grey,
-                    ),
-                    filled: true,
-                    fillColor: amountFLag ? Colors.red.shade50 : Colors.grey[100],
-                    hintText: 'Amount',
-                  ),
-                  cursorColor: Colors.black,
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-
-              const SizedBox(height: 5,),
-
-              const Text('Provider'),
-
-              const SizedBox(height: 5,),
-
-              //Provider Name
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  color: providerFlag ? Colors.red.shade50 : Colors.white,
-                ),
-                child: SizedBox(
-                  height: 50,
-                  //MediaQuery.of(context).size.width*0.9 - 40,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    scrollDirection: Axis.horizontal,
-                    itemCount: userNames?.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: TextButton(
-                          onPressed: (){
-                            setState(() {
-                              selectedProviderFlag = index;
-
-                              providerFlag = false;
-                              selectedUserID = userIDs![index];
-                            });
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateColor.resolveWith(
-                                    (states) => selectedProviderFlag == index ? Colors.deepPurple : Colors.deepPurple.withOpacity(0.08)
-                            ),
-
-                          ),
-                          child: Center(
-                              child: Text(
-                                userNames![index],
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  color: selectedProviderFlag == index ? Colors.white : Colors.black
-                                ),
-                              )
-                          ),
-                        ),
-                      );
+                //Amount
+                SizedBox(
+                  height: 60,
+                  child: TextField(
+                    controller: amountController,
+                    onChanged: (value) {
+                      setState(() {
+                        amountFLag = false;
+                      });
                     },
+                    decoration: InputDecoration(
+                      focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide.none
+                      ),
+                      enabledBorder:  const OutlineInputBorder(
+                          borderSide: BorderSide.none
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.onetwothree,
+                        color: Colors.grey,
+                      ),
+                      filled: true,
+                      fillColor: amountFLag ? Colors.red.shade50 : Colors.grey[100],
+                      hintText: 'Amount',
+                    ),
+                    cursorColor: Colors.black,
+                    keyboardType: TextInputType.number,
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 8,),
+                const SizedBox(height: 5,),
 
-              //Description
-              Container(
-                constraints: const BoxConstraints(
-                    minHeight: 135,//135
-                    maxHeight: 300
-                ),
-                child: TextField(
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  controller: descriptionController,
-                  style: const TextStyle(
-                      overflow: TextOverflow.clip
+                const Text('Provider'),
+
+                const SizedBox(height: 5,),
+
+                //Provider Name
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    color: providerFlag ? Colors.red.shade50 : Colors.white,
                   ),
-                  decoration: InputDecoration(
-                    focusedBorder: const OutlineInputBorder(
-                        borderSide: BorderSide.none
+                  child: SizedBox(
+                    height: 50,
+                    //MediaQuery.of(context).size.width*0.9 - 40,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      scrollDirection: Axis.horizontal,
+                      itemCount: userNames?.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: TextButton(
+                            onPressed: (){
+                              setState(() {
+                                selectedProviderFlag = index;
+
+                                providerFlag = false;
+                                selectedUserID = userIDs![index];
+                              });
+                            },
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateColor.resolveWith(
+                                      (states) => selectedProviderFlag == index ? Colors.deepPurple : Colors.deepPurple.withOpacity(0.08)
+                              ),
+
+                            ),
+                            child: Center(
+                                child: Text(
+                                  userNames![index],
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    color: selectedProviderFlag == index ? Colors.white : Colors.black
+                                  ),
+                                )
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    enabledBorder:  const OutlineInputBorder(
-                        borderSide: BorderSide.none
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.short_text_rounded,
-                      color: Colors.grey,
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    hintText: 'Description',
                   ),
-                  cursorColor: Colors.black,
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 8,),
+
+                //Description
+                Container(
+                  constraints: const BoxConstraints(
+                      minHeight: 135,//135
+                      maxHeight: 300
+                  ),
+                  child: TextField(
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    controller: descriptionController,
+                    style: const TextStyle(
+                        overflow: TextOverflow.clip
+                    ),
+                    decoration: InputDecoration(
+                      focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide.none
+                      ),
+                      enabledBorder:  const OutlineInputBorder(
+                          borderSide: BorderSide.none
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.short_text_rounded,
+                        color: Colors.grey,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      hintText: 'Description',
+                    ),
+                    cursorColor: Colors.black,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
