@@ -659,6 +659,7 @@ class _HomePageState extends State<HomePage> {
                                     description: description,
                                     provider: providerName,
                                     docID: docID,
+                                    time: time.toString(),
                                   ),
                                   transition: Transition.fade
                               );
@@ -809,6 +810,7 @@ class _HomePageState extends State<HomePage> {
                         description: descriptions[index],
                         provider: providerNames[index],
                         docID: docIDs[index],
+                        time: times[index],
                       ),
                       transition: Transition.fade
                   );

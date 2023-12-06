@@ -1,5 +1,6 @@
 import 'package:flashy_tab_bar2/flashy_tab_bar2.dart';
 import 'package:flutter/material.dart';
+import 'package:splitshare/Screens/Calculation/calculation_screen.dart';
 import '../Screens/Home/home.dart';
 
 // ignore: must_be_immutable
@@ -21,7 +22,7 @@ class _BottomBarState extends State<BottomBar> {
       return const HomePage();
     }else if(widget.bottomIndex == 1){
       previousIndex = 1;
-      return const Placeholder();//SearchPage(keyword: keyword,); //ShopHomePage
+      return const CalculationScreen();//SearchPage(keyword: keyword,); //ShopHomePage
     }
     return null;
   }

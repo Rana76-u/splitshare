@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splitshare/Models/manage_crud_operations.dart';
 import 'package:splitshare/Widgets/loading.dart';
@@ -10,6 +11,7 @@ class CRUDEvent extends StatefulWidget {
   String? description;
   String? provider;
   String? docID;
+  String? time;
 
   CRUDEvent({
     super.key,
@@ -17,7 +19,8 @@ class CRUDEvent extends StatefulWidget {
     this.amount,
     this.description,
     this.provider,
-    this.docID
+    this.docID,
+    this.time
   });
 
   @override
@@ -31,6 +34,8 @@ class _CRUDEventState extends State<CRUDEvent> {
   bool providerFlag = false;
 
   int selectedProviderFlag = -1;
+
+  String? tripCode;
 
   String selectedUserID = '';
   String selectedUserName = '';
@@ -53,6 +58,7 @@ class _CRUDEventState extends State<CRUDEvent> {
 
     userNames = prefs.getStringList('userNames');
     userIDs = prefs.getStringList('userIDs');
+    tripCode = prefs.getString('tripCode');
 
     print(userNames);
     print(userIDs);
@@ -79,9 +85,9 @@ class _CRUDEventState extends State<CRUDEvent> {
     });
 
     final messenger = ScaffoldMessenger.of(context);
-    final prefs = await SharedPreferences.getInstance();
+    //final prefs = await SharedPreferences.getInstance();
 
-    String? tripCode = prefs.getString('tripCode');
+    //String? tripCode = prefs.getString('tripCode');
 
     if(amountController.text.isEmpty){
 
@@ -112,7 +118,8 @@ class _CRUDEventState extends State<CRUDEvent> {
           selectedUserID,
           selectedUserName,
           widget.docID ?? 'new',
-          tripCode!);
+          tripCode!
+      );
 
       //upload Data to Firebase
       /*if(await InternetConnectionChecker().hasConnection){
@@ -176,17 +183,7 @@ class _CRUDEventState extends State<CRUDEvent> {
           ),
 
           //3Dot Icon
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: GestureDetector(
-              onTap: () {},
-              child: const SizedBox(
-                height: 35,
-                width: 35,
-                child: Icon(Icons.more_horiz_rounded),
-              ),
-            ),
-          ),
+          popUpMenu()
         ],
       ),
       body: SingleChildScrollView(
@@ -325,6 +322,84 @@ class _CRUDEventState extends State<CRUDEvent> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget popUpMenu() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 20),
+      child: PopupMenuButton(
+        initialValue: "Delete",
+        onSelected: (String value) {
+          // Handle the selected value here
+          if (value == "Delete") {
+            // Add your delete logic here
+            print('Delete tapped!');
+          }
+        },
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+          PopupMenuItem(
+            value: "Delete",
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text("Confirm Delete"),
+                    content: const Text("Are you sure you want to delete?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          // Dismiss the dialog
+                          Navigator.pop(context);
+                        },
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          // Perform the delete action
+                          if(await InternetConnectionChecker().hasConnection){
+                            ManageCRUDOperations().deleteEvent(widget.docID ?? "new", tripCode!);
+                          }
+                          else{
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                  content: Text("Internet Connection Required to 'Delete'")
+                              )
+                            );
+                          }
+                          // Dismiss the dialog
+                          if(mounted){
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: const Text("Delete"),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            child: const Row(
+              children: [
+                Icon(Icons.delete),
+                Text(
+                  'Delete',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+        child: const SizedBox(
+          height: 35,
+          width: 35,
+          child: Icon(Icons.more_horiz_rounded),
         ),
       ),
     );

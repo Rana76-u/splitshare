@@ -119,4 +119,22 @@ class ManageCRUDOperations {
         transition: Transition.fade
     );
   }
+
+  Future<void> deleteEvent (String docID, String tripCode) async {
+    //if internet is connected
+    if(await InternetConnectionChecker().hasConnection){
+      await FirebaseFirestore
+          .instance
+          .collection('trips')
+          .doc(tripCode)
+          .collection('Events')
+          .doc(docID)
+          .delete();
+    }
+
+    Get.to(
+            () => BottomBar(bottomIndex: 0),
+        transition: Transition.fade
+    );
+  }
 }
