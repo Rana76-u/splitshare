@@ -4,12 +4,21 @@ import 'package:get/get.dart';
 import 'package:splitshare/Screens/Profile/profile.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
-
   final bool connected;
-  const HomeAppBar({super.key, required this.connected,});
+  final bool isLoading;
+
+  const HomeAppBar({
+    super.key,
+    required this.connected,
+    required this.isLoading,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  void backupSystem() {
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +34,25 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         Padding(
+          padding: const EdgeInsets.only(right: 15),
+          child: isLoading && connected ?
+          const SizedBox(
+            width: 50,
+            child: LinearProgressIndicator(),
+          )
+              : connected ?
+          const Icon(
+            Icons.cloud_done_rounded,
+            color: Colors.green,
+          )
+              :
+          const Icon(
+            Icons.cloud_done_rounded,
+            color: Colors.grey,
+          ),
+        ),
+
+        Padding(
           padding: const EdgeInsets.only(right: 20),
           child: GestureDetector(
             onTap: () {},
@@ -35,22 +63,19 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                 borderRadius: BorderRadius.circular(50),
                 child: !connected
                     ?
-                /*Lottie.asset(
+                    /*Lottie.asset(
                     'assets/lottie/profile.json'
                 )*/
-                const Icon(Icons.person)
-                    :
-                GestureDetector(
-                  onTap: () {
-                    Get.to(
-                        () => const Profile(),
-                      transition: Transition.fade
-                    );
-                  },
-                      child: Image.network(
-                  FirebaseAuth.instance.currentUser!.photoURL ?? '',
-                  ),
-                ),
+                    const Icon(Icons.person)
+                    : GestureDetector(
+                        onTap: () {
+                          Get.to(() => const Profile(),
+                              transition: Transition.fade);
+                        },
+                        child: Image.network(
+                          FirebaseAuth.instance.currentUser!.photoURL ?? '',
+                        ),
+                      ),
               ),
             ),
           ),

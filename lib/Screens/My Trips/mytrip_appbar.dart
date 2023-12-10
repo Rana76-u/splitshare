@@ -30,7 +30,7 @@ class MyTripAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: ElevatedButton(
             onPressed: () {
               Get.to(
-                  const JoinTrip(),
+                  () => const JoinTrip(),
                   transition: Transition.fade
               );
             },
@@ -50,7 +50,7 @@ class MyTripAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: GestureDetector(
             onTap: () {
               Get.to(
-                const Profile(),
+                  () => const Profile(),
                 transition: Transition.fade
               );
             },

@@ -14,20 +14,20 @@ void main() async {
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform
   );
-  if(await FlutterOverlayWindow.isPermissionGranted()) {
+  /*if(await FlutterOverlayWindow.isPermissionGranted()) {
     FlutterOverlayWindow.requestPermission();
-  }
+  }*/
   runApp(const MyApp());
 }
 
 // overlay entry point
-@pragma("vm:entry-point")
+/*@pragma("vm:entry-point")
 void overlayMain() {
   runApp(const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Material(child: Text("My overlay"))
   ));
-}
+}*/
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

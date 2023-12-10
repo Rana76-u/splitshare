@@ -68,7 +68,7 @@ class _JoinTripState extends State<JoinTrip> {
       TripInfoManager().saveTripInfo(tripCode);
 
       Get.to(
-        BottomBar(bottomIndex: 0),
+          () => BottomBar(bottomIndex: 0),
         transition: Transition.fade
       );
     }

@@ -32,7 +32,7 @@ class ProfileFloatingActionButton extends StatelessWidget {
 
                   if(result == true){
                     Get.to(
-                      const MyTrips(),
+                      () => const MyTrips(),
                       transition: Transition.fade,
                     );
                   }
@@ -72,7 +72,7 @@ class ProfileFloatingActionButton extends StatelessWidget {
                   AuthService().signOut();
 
                   Get.to(
-                    const LoginPage(),
+                      () => const LoginPage(),
                     transition: Transition.fade
                   );
                 },

@@ -14,7 +14,7 @@ class MyTripFloatingActionButton extends StatelessWidget {
         child: FloatingActionButton.extended(
           onPressed: () {
             Get.to(
-              const CreateTrip(),
+              () => const CreateTrip(),
               transition: Transition.fade,
             );
           },

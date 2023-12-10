@@ -1,12 +1,10 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splitshare/Models/global_variables.dart';
 import 'package:splitshare/Screens/CRUD/crud_event.dart';
@@ -25,6 +23,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
 
   Timer? connectionTimer;
+
+  bool isFirstTimeLoading = true;
 
   bool connection = true;
   final bool _isSearching = false;
@@ -70,29 +70,33 @@ class _HomePageState extends State<HomePage> {
 
   void startConnectionCheckTimer() {
     // Create a timer that checks the connection status every 5 seconds.
-    connectionTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      checkConnection();
+    connectionTimer = Timer.periodic(const Duration(milliseconds: 2000), (timer) {
+      if(mounted){
+        checkConnection();
+      }
     });
   }
 
   Future<void> checkConnection() async {
     bool hasConnection = await InternetConnectionChecker().hasConnection;
-    if (hasConnection != connection) {
-      // The connection status has changed.
-      setState(() {
-        connection = hasConnection;
-      });
+    if(mounted){
+      if (hasConnection != connection) {
+        // The connection status has changed.
+        setState(() {
+          connection = hasConnection;
+        });
 
-      if (hasConnection) {
-        if (!isBackupInProgress) {
-          isBackupInProgress = true;
-          backupData().then((_) {
-            isBackupInProgress = false;
-          });
+        if (hasConnection) {
+          if (!isBackupInProgress) {
+            isBackupInProgress = true;
+            backupData().then((_) {
+              isBackupInProgress = false;
+            });
+          }
         }
-      }
-      else {
-        getDataFromSharedPreferences();
+        else {
+          getDataFromSharedPreferences();
+        }
       }
     }
   }
@@ -178,12 +182,23 @@ class _HomePageState extends State<HomePage> {
 
       await backupData();
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> backupData() async {
-
+    final messenger = ScaffoldMessenger.of(context);
     final prefs = await SharedPreferences.getInstance();
 
+    messenger.showSnackBar(
+      const SnackBar(
+        duration: Duration(milliseconds: 500),
+          content: Text('Backing up content.')
+      )
+    );
+    
     if(isChanged.isNotEmpty){
       for(int index=0; index<isChanged.length; index++){
         if(index < isChanged.length && isChanged[index] == 'changed'){ //&& tripCode != ''
@@ -212,21 +227,26 @@ class _HomePageState extends State<HomePage> {
             'providedBy': providerIDs[index],
           });
 
-          setState(() {
-            if(index < isChanged.length){
+          setState(() async {
+            if(index < isChanged.length) {
               isChanged[index] = 'notChanged';
+              //Also Save new isChanged lists into prefs
+              await prefs.setStringList('isChanged', isChanged);
             }
           });
         }
       }
 
-      //Also Save new isChanged lists into prefs
-      await prefs.setStringList('isChanged', isChanged);
+      /*//Also Save new isChanged lists into prefs
+      await prefs.setStringList('isChanged', isChanged);*/
     }
 
-    setState(() {
-      _isLoading = false;
-    });
+    messenger.showSnackBar(
+        const SnackBar(
+            duration: Duration(milliseconds: 500),
+            content: Text('Backup Complete')
+        )
+    );
   }
 
   Future<void> saveDataToSharedPreferences() async {
@@ -351,14 +371,17 @@ class _HomePageState extends State<HomePage> {
     return WillPopScope(
       onWillPop: handleWillPop,
       child: Scaffold(
-        appBar: HomeAppBar(connected: connection),
+        appBar: HomeAppBar(
+            connected: connection,
+          isLoading: _isLoading,
+        ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: const HomeFloatingActionButton(),
         body: RefreshIndicator(
           onRefresh: _handleRefresh,
           child: _isLoading ?
-          Center(
-            child: Column(
+          const Center(
+            child: CircularProgressIndicator(), /*Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -375,7 +398,7 @@ class _HomePageState extends State<HomePage> {
                   textAlign: TextAlign.center,
                 )
               ],
-            ),
+            )*/
           )
               :
           //SingleChildScrollView
@@ -597,6 +620,8 @@ class _HomePageState extends State<HomePage> {
       builder: (context, snapshot) {
         if(snapshot.hasData){
           if(snapshot.data!.docs.isEmpty){
+            //Saves Data Locally
+            saveDataToSharedPreferences();
             return const Center(
               child: Text(
                 'No Events Yet',
@@ -659,7 +684,9 @@ class _HomePageState extends State<HomePage> {
                       docIDs.add(docID);
                       isChanged.add('notChanged');
 
-                      searchIndexes.add(index);
+                      if(selectedProviderFlag == -1){
+                        searchIndexes.add(index);
+                      }
                     }
 
                     if(providerSnapshot.hasData){
@@ -864,11 +891,13 @@ class _HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         const Text('Provider: '),
-                        Text(
-                          providerNames[index],
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              overflow: TextOverflow.ellipsis
+                        Expanded(
+                          child: Text(
+                            providerNames[index],
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                overflow: TextOverflow.ellipsis
+                            ),
                           ),
                         ),
                       ],

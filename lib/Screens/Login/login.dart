@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
               GestureDetector(
                 onTap: () {
                   Get.to(
-                    const HomePage(),
+                      () => const HomePage(),
                   );
                 },
                 child: const Text(
@@ -77,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                       setState(() {
                         isLoading = false;
                         Get.to(
-                          const MyTrips(),
+                            () => const MyTrips(),
                           transition: Transition.fade
                         );
                       });

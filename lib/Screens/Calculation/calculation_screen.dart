@@ -201,7 +201,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
           return false;
         },
       child: Scaffold(
-        appBar: HomeAppBar(connected: connection,),
+        appBar: HomeAppBar(connected: connection, isLoading: false,),
         body: _isLoading ?
         const Center(
           child: CircularProgressIndicator(),
