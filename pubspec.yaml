@@ -48,6 +48,7 @@ dependencies:
   shared_preferences: ^2.2.2
   intl: ^0.18.1
   lottie: ^2.7.0
+  flutter_overlay_window: ^0.4.3
 
 dev_dependencies:
   flutter_test:

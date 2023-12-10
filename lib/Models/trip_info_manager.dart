@@ -26,7 +26,7 @@ class TripInfoManager {
 
     List<String> usersStringList = users.map((item) => item.toString()).toList();
 
-    await prefs.setString('tripCode', tripCode);
+    await prefs.setString('tripCode', tripCode); //await
     await prefs.setString('tripCreator', tripCreator);
     await prefs.setString('tripDate', tripDate);
     await prefs.setString('lastEdited', lastEdited);

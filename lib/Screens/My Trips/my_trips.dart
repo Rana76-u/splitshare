@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:splitshare/Models/global_variables.dart';
 import 'package:splitshare/Models/trip_info_manager.dart';
 import 'package:splitshare/Screens/My%20Trips/mytrip_appbar.dart';
 import 'package:splitshare/Screens/My%20Trips/mytrip_floatingbutton.dart';
@@ -257,7 +258,9 @@ class _MyTripsState extends State<MyTrips> {
           child: ListTile(
             onTap: () async {
 
-              TripInfoManager().saveTripInfo(tripCodes[tripNames.indexOf(matchedTripNames[index])]);
+              await TripInfoManager().saveTripInfo(tripCodes[tripNames.indexOf(matchedTripNames[index])]);
+
+              firstLoadTripCode = tripCodes[tripNames.indexOf(matchedTripNames[index])];
 
               Get.to(
                       () => BottomBar(bottomIndex: 0),

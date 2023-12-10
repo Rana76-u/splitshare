@@ -38,6 +38,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
   @override
   void initState() {
     _isLoading = true;
+    checkConnection();
     getDataFromSharedPreferences();
     super.initState();
   }

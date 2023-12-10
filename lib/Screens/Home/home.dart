@@ -8,6 +8,7 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:splitshare/Models/global_variables.dart';
 import 'package:splitshare/Screens/CRUD/crud_event.dart';
 import 'package:splitshare/Screens/Home/home_appbar.dart';
 import 'package:splitshare/Screens/Home/home_floating.dart';
@@ -45,7 +46,7 @@ class _HomePageState extends State<HomePage> {
   List<String> docIDs = [];
   List<String> isChanged = [];
   List<String> userNames = [];
-  List<String>? userIDs = [];
+  List<String> userIDs = [];
   List<int> searchIndexes = [];
 
   TextEditingController searchController = TextEditingController();
@@ -56,9 +57,8 @@ class _HomePageState extends State<HomePage> {
     _isLoading = true;
     startConnectionCheckTimer();
     loadTripInfo();
-    backupData();
     super.initState();
-    //startConnectionCheckTimer();
+    /////startConnectionCheckTimer();
   }
 
   @override
@@ -99,14 +99,27 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> loadTripInfo() async {
     if(connection){
-      List<dynamic> userIds = [];
-      List<dynamic> userNames = [];
+      List<dynamic> loadTripInfoUserIDs = [];
+      List<dynamic> loadTripInfoUserNames = [];
 
       final prefs = await SharedPreferences.getInstance();
 
-      setState(() {
-        tripCode = prefs.getString('tripCode')!;
-      });
+      if(firstLoadTripCode != ''){
+        //setState(() {
+          tripCode = firstLoadTripCode;
+        //});
+      }
+      else{
+        //setState(() {
+          tripCode = prefs.getString('tripCode') ?? '';
+        //});
+      }
+
+      /*setState(() {
+        tripCode = prefs.getString('tripCode') ?? '';
+        print(tripCode);
+      });*/
+
       //This was inside backupData
       if(prefs.containsKey('titles')){
         titles = prefs.getStringList('titles') ?? [];
@@ -117,13 +130,17 @@ class _HomePageState extends State<HomePage> {
         providerIDs = prefs.getStringList('providerIDs') ?? [];
         docIDs = prefs.getStringList('docIDs') ?? [];
         isChanged = prefs.getStringList('isChanged') ?? [];
+
+        for(int i=0; i<titles.length; i++){
+          searchIndexes.add(i);
+        }
       }
 
-      loadUsers();
-
-      for(int i=0; i<titles.length; i++){
-        searchIndexes.add(i);
+      if(prefs.containsKey('userNames')){
+        userNames = prefs.getStringList('userNames') ?? [];
+        userIDs = prefs.getStringList('userIDs') ?? [];
       }
+
 
       //Loads all trip info
       DocumentSnapshot tripCodeSnapshot =
@@ -134,46 +151,44 @@ class _HomePageState extends State<HomePage> {
           .get();
       await prefs.setString('tripCreator', tripCodeSnapshot.get('creator'));
 
-      userIds = tripCodeSnapshot.get('users');
-      List<String> stringUserIdsList = userIds.map((item) => item.toString()).toList();
+      loadTripInfoUserIDs = tripCodeSnapshot.get('users');
+      List<String> stringUserIdsList = loadTripInfoUserIDs.map((item) => item.toString()).toList();
       await prefs.setStringList('userIDs', stringUserIdsList);
 
       //loads and save all usernames
-      for(int i=0; i<userIds.length; i++){
+      for(int i=0; i<loadTripInfoUserIDs.length; i++){
         DocumentSnapshot userSnapshot =
         await FirebaseFirestore
             .instance
             .collection('userData')
-            .doc(userIds[i])
+            .doc(loadTripInfoUserIDs[i])
             .get();
 
-        userNames.add(userSnapshot.get('name'));
+        loadTripInfoUserNames.add(userSnapshot.get('name'));
       }
-      List<String> stringUserNamesList = userNames.map((item) => item.toString()).toList();
+      List<String> stringUserNamesList = loadTripInfoUserNames.map((item) => item.toString()).toList();
       await prefs.setStringList('userNames', stringUserNamesList);
-
       //lastEdited = DateTime.parse(prefs.getString('lastEdited') ?? '');
+
+      userIDs = stringUserIdsList;
+      userNames = stringUserNamesList;
+
+      print(userIDs);
+      print(userNames);
+
+      await backupData();
     }
   }
 
-  void loadUsers() async {
+  Future<void> backupData() async {
+
     final prefs = await SharedPreferences.getInstance();
 
-    userNames = prefs.getStringList('userNames')!;
-    userIDs = prefs.getStringList('userIDs');
-  }
+    if(isChanged.isNotEmpty){
+      for(int index=0; index<isChanged.length; index++){
+        if(index < isChanged.length && isChanged[index] == 'changed'){ //&& tripCode != ''
 
-  Future<void> backupData() async {
-    if(connection){
-
-      final prefs = await SharedPreferences.getInstance();
-
-
-      if(isChanged.isNotEmpty){
-        for(int index=0; index<isChanged.length; index++){
-          if(index < isChanged.length && isChanged[index] == 'changed'){
-
-            /*ManageCRUDOperations().uploadInfo(
+          /*ManageCRUDOperations().uploadInfo(
                 titles[index],
                 descriptions[index],
                 double.parse(amounts[index]),
@@ -182,32 +197,31 @@ class _HomePageState extends State<HomePage> {
                 docIDs[index],
                 tripCode
             );*/
-            FirebaseFirestore
-                .instance
-                .collection('trips')
-                .doc(tripCode)
-                .collection('Events')
-                .doc()
-                .set({
-              'title': titles[index],
-              'description': descriptions[index],
-              'amount': double.parse(amounts[index]),
-              'time': DateTime.now(),
-              'addedBy': FirebaseAuth.instance.currentUser!.uid,
-              'providedBy': providerIDs[index],
-            });
+          FirebaseFirestore
+              .instance
+              .collection('trips')
+              .doc(tripCode)
+              .collection('Events')
+              .doc()
+              .set({
+            'title': titles[index],
+            'description': descriptions[index],
+            'amount': double.parse(amounts[index]),
+            'time': DateTime.now(),
+            'addedBy': FirebaseAuth.instance.currentUser!.uid,
+            'providedBy': providerIDs[index],
+          });
 
-            setState(() {
-              if(index < isChanged.length){
-                isChanged[index] = 'notChanged';
-              }
-            });
-          }
+          setState(() {
+            if(index < isChanged.length){
+              isChanged[index] = 'notChanged';
+            }
+          });
         }
-
-        //Also Save new isChanged lists into prefs
-        await prefs.setStringList('isChanged', isChanged);
       }
+
+      //Also Save new isChanged lists into prefs
+      await prefs.setStringList('isChanged', isChanged);
     }
 
     setState(() {
@@ -412,6 +426,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget searchFilterWidget() {
+    print(userNames);
     return Column(
       children: [
         // Search TextField
@@ -487,14 +502,17 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         //Search Loading
-        _isSearching ? LinearProgressIndicator(
+        _isSearching ?
+        LinearProgressIndicator(
           color: Colors.blue.shade100,
         )
-            : const SizedBox(
+            :
+        const SizedBox(
           height: 0,
           width: 0,
         ),
 
+        //User names
         Padding(
           padding: const EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 10),
           child: Container(
@@ -527,7 +545,7 @@ class _HomePageState extends State<HomePage> {
                             selectedProviderFlag = index;
 
                             providerFlag = false;
-                            selectedUserID = userIDs![index];
+                            selectedUserID = userIDs[index];
                             //performSearch();
                             performProviderSearch(index);
                           }
@@ -640,6 +658,8 @@ class _HomePageState extends State<HomePage> {
                       providerIDs.add(providedBy);
                       docIDs.add(docID);
                       isChanged.add('notChanged');
+
+                      searchIndexes.add(index);
                     }
 
                     if(providerSnapshot.hasData){

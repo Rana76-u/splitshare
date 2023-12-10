@@ -127,7 +127,7 @@ class _CreateTripState extends State<CreateTrip> {
                     await prefs.setString('creator', FirebaseAuth.instance.currentUser!.displayName.toString());
                     await prefs.setString('lastLoaded', DateTime.now().toString());
                     await prefs.setStringList('users', [FirebaseAuth.instance.currentUser!.uid]);*/
-                    TripInfoManager().saveTripInfo(randomTripCode);
+                    await TripInfoManager().saveTripInfo(randomTripCode);
 
                     messenger.showSnackBar(
                         const SnackBar(
@@ -139,7 +139,7 @@ class _CreateTripState extends State<CreateTrip> {
 
                     //get to home
                     Get.to(
-                        BottomBar(bottomIndex: 0),
+                            () => BottomBar(bottomIndex: 0),
                         transition: Transition.fade
                     );
                   },
