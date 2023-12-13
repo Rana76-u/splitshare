@@ -10,7 +10,6 @@ import 'package:splitshare/Models/global_variables.dart';
 import 'package:splitshare/Screens/CRUD/crud_event.dart';
 import 'package:splitshare/Screens/Home/home_appbar.dart';
 import 'package:splitshare/Screens/Home/home_floating.dart';
-
 import '../../Widgets/bottom_nav_bar.dart';
 
 class HomePage extends StatefulWidget {
@@ -875,7 +874,7 @@ class _HomePageState extends State<HomePage> {
                       fontWeight: FontWeight.bold,
                       overflow: TextOverflow.ellipsis
                   ),
-                ),
+                ), 
                 //user name
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

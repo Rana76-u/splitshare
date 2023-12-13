@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:get/get.dart';
 import 'package:splitshare/Screens/Profile/profile.dart';
 
@@ -24,31 +25,63 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
-      title: const Text(
-        'SPLITSHARE',
-        style: TextStyle(
-          fontFamily: 'Anurati',
-          fontSize: 25,
-          letterSpacing: 3,
+      title: GestureDetector(
+        onTap: () {
+          FlutterOverlayWindow.showOverlay(height: 100, width: 100);
+        },
+        child: const Text(
+          'SPLITSHARE',
+          style: TextStyle(
+            fontFamily: 'Anurati',
+            fontSize: 25,
+            letterSpacing: 3,
+          ),
         ),
       ),
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 15),
           child: isLoading && connected ?
-          const SizedBox(
-            width: 50,
-            child: LinearProgressIndicator(),
+          GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Backup In Progress')
+                  )
+              );
+            },
+            child: const SizedBox(
+              width: 50,
+              child: LinearProgressIndicator(),
+            ),
           )
               : connected ?
-          const Icon(
-            Icons.cloud_done_rounded,
-            color: Colors.green,
+          GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('All Data Backup Successfully')
+                )
+              );
+            },
+            child: const Icon(
+              Icons.cloud_done_rounded,
+              color: Colors.green,
+            ),
           )
               :
-          const Icon(
-            Icons.cloud_done_rounded,
-            color: Colors.grey,
+          GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Backup Is Pending')
+                  )
+              );
+            },
+            child: const Icon(
+              Icons.cloud_done_rounded,
+              color: Colors.grey,
+            ),
           ),
         ),
 
