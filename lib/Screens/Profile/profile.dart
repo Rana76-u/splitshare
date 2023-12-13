@@ -46,22 +46,25 @@ class _ProfileState extends State<Profile> {
 
                   const SizedBox(width: 10,),
 
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      //name
-                      Text(
-                        FirebaseAuth.instance.currentUser!.displayName.toString(),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 27
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        //name
+                        Text(
+                          FirebaseAuth.instance.currentUser!.displayName.toString(),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 27,
+                            overflow: TextOverflow.clip
+                          ),
                         ),
-                      ),
-                      //email
-                      Text(
-                        FirebaseAuth.instance.currentUser!.email.toString(),
-                      ),
-                    ],
+                        //email
+                        Text(
+                          FirebaseAuth.instance.currentUser!.email.toString(),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               )

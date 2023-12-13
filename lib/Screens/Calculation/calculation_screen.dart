@@ -244,7 +244,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                     ),
                   ),
                   Text(
-                    'Per Person: $perPerson/-',
+                    'Per Person: ${perPerson.toStringAsFixed(2)}/-',
                     style: const TextStyle(
                         fontFamily: 'Urbanist',
                         fontWeight: FontWeight.bold,

@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:get/get.dart';
 import 'package:splitshare/Screens/Profile/profile.dart';
 
@@ -17,25 +16,16 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
-  void backupSystem() {
-
-  }
-
   @override
   Widget build(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
-      title: GestureDetector(
-        onTap: () {
-          FlutterOverlayWindow.showOverlay(height: 100, width: 100);
-        },
-        child: const Text(
-          'SPLITSHARE',
-          style: TextStyle(
-            fontFamily: 'Anurati',
-            fontSize: 25,
-            letterSpacing: 3,
-          ),
+      title: const Text(
+        'SPLITSHARE',
+        style: TextStyle(
+          fontFamily: 'Anurati',
+          fontSize: 25,
+          letterSpacing: 3,
         ),
       ),
       actions: [

@@ -87,6 +87,7 @@ class _JoinTripState extends State<JoinTrip> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: _isLoading ?
       const Center(
         child: CircularProgressIndicator(),
@@ -147,6 +148,42 @@ class _JoinTripState extends State<JoinTrip> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+              ),
+            ),
+
+            //or
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 10, bottom: 10),
+                  child: Text('or')
+              ),
+            ),
+
+            //QR CODE
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateColor.resolveWith((states) => Colors.deepPurple),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                        Icons.qr_code_scanner_rounded,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 10,),
+                    Text(
+                      'SCAN QR CODE',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    )
+                  ],
                 ),
               ),
             ),

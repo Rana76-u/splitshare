@@ -59,6 +59,16 @@ class TripInfoManager {
     return prefs.getStringList('users');
   }
 
+  void saveUsers(List<String> users) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('users', users);
+  }
+
+  void saveUserNames(List<String> userNames) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('userNames', userNames);
+  }
+
   Future<void> clearTripInfo() async {
     final prefs = await SharedPreferences.getInstance();
 

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -6,7 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:splitshare/Models/trip_info_manager.dart';
 import 'package:splitshare/Screens/Home/home_appbar.dart';
+import 'package:splitshare/Screens/My%20Trips/my_trips.dart';
 import 'package:splitshare/Widgets/bottom_nav_bar.dart';
 
 class InfoPage extends StatefulWidget {
@@ -106,6 +110,88 @@ class _InfoPageState extends State<InfoPage> {
         },
       ),
     );
+  }
+
+  void deleteUser(int index) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Dismiss the dialog
+    if(mounted){
+      Navigator.pop(context);
+    }
+
+    if(await InternetConnectionChecker().hasConnection){
+      //can't remove tripCreator
+      if(users[index] == tripCreator){
+        messenger.showSnackBar(
+            const SnackBar(
+                content: Text('Can not remove trip creator')
+            )
+        );
+      }
+      else{
+
+        setState(() {
+          _isLoading = true;
+        });
+
+        //Delete from trip
+        FirebaseFirestore
+            .instance
+            .collection('trips')
+            .doc(tripCode)
+            .update({
+          'users': FieldValue.arrayRemove([users[index]]),
+        });
+
+        //Delete from userData
+        FirebaseFirestore
+            .instance
+            .collection('userData')
+            .doc(users[index])
+            .update({
+          'tripCodes' : FieldValue.arrayRemove([tripCode])
+        });
+
+        //If removes himself
+        if(users[index] == FirebaseAuth.instance.currentUser!.uid){
+          messenger.showSnackBar(
+              const SnackBar(content: Text('You left the trip'))
+          );
+
+          Get.to(
+                  () => const MyTrips(),
+              transition: Transition.fade
+          );
+        }
+        else{
+          //Delete from lists
+          users.removeAt(index);
+          userNames.removeAt(index);
+
+          //Delete from SharedPreferences
+          TripInfoManager().saveUsers(users.cast<String>());
+
+          TripInfoManager().saveUserNames(userNames.cast<String>());
+
+          messenger.showSnackBar(
+              const SnackBar(content: Text('User Removed'))
+          );
+        }
+
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+    else{
+      messenger.showSnackBar(
+          const SnackBar(
+              content: Text('Internet Connection Required To Perform Deletion')
+          )
+      );
+    }
+
   }
 
   @override
@@ -338,50 +424,48 @@ class _InfoPageState extends State<InfoPage> {
               tileColor: Colors.blue.shade50,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
-              trailing: SizedBox(
-                width: 90,
-                child: Row(
-                  children: [
-                    //Edit
-                    GestureDetector(
-                      onTap: () {},
-                      child: const SizedBox(
-                        height: 37,
-                        width: 37,
-                        child: Padding(
-                          padding: EdgeInsets.all(5),
-                          child: Icon(
-                            Icons.edit,
-                            size: 20,
-                            color: Colors.blueGrey,
-                          ),
-                        ),
-                      ),
+              trailing: GestureDetector(
+                onTap: () {
+                  showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text("Confirm Delete"),
+                          content: const Text("Are you sure you want to delete?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                // Dismiss the dialog
+                                Navigator.pop(context);
+                              },
+                              child: const Text("Cancel"),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                // Perform the delete action
+                                deleteUser(index = index);
+                              },
+                              child: const Text("Delete"),
+                            ),
+                          ],
+                        );
+                      },
+                  );
+                },
+                child: const SizedBox(
+                  height: 37,
+                  width: 37,
+                  child: Padding(
+                    padding: EdgeInsets.all(5),
+                    child: Icon(
+                      Icons.delete,
+                      size: 20,
+                      color: Colors.redAccent,
                     ),
-
-                    const SizedBox(
-                      width: 10,
-                    ),
-
-                    //Delete
-                    GestureDetector(
-                      onTap: () {},
-                      child: const SizedBox(
-                        height: 37,
-                        width: 37,
-                        child: Padding(
-                          padding: EdgeInsets.all(5),
-                          child: Icon(
-                            Icons.delete,
-                            size: 20,
-                            color: Colors.redAccent,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              )),
+              )
+          ),
         );
       },
     );

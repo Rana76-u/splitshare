@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         if (FirebaseAuth.instance.currentUser != null &&
             snapshot.connectionState == ConnectionState.done &&
             snapshot.data!.getString('tripCode') != null) {
-          return BottomBar(bottomIndex: 2); //Fix 0
+          return BottomBar(bottomIndex: 0); //Fix 0
         } else if (FirebaseAuth.instance.currentUser != null) {
           return const MyTrips();
         } else {
