@@ -8,11 +8,15 @@ import 'package:splitshare/Screens/My%20Trips/my_trips.dart';
 import 'package:splitshare/Widgets/bottom_nav_bar.dart';
 import 'package:splitshare/firebase_options.dart';
 
+import 'API/firebase_api.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform
   );
+
+  await FirebaseApi().initNotifications();
   runApp(const MyApp());
 }
 

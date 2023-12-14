@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:splitshare/API/notification_sender.dart';
 import 'package:splitshare/Models/manage_crud_operations.dart';
 import 'package:splitshare/Widgets/loading.dart';
 
@@ -39,6 +41,7 @@ class _CRUDEventState extends State<CRUDEvent> {
   int selectedProviderFlag = -1;
 
   String? tripCode;
+  String tripName = '';
 
   String selectedUserID = '';
   String selectedUserName = '';
@@ -62,6 +65,8 @@ class _CRUDEventState extends State<CRUDEvent> {
     userNames = prefs.getStringList('userNames');
     userIDs = prefs.getStringList('userIDs');
     tripCode = prefs.getString('tripCode');
+    tripName = prefs.getString('tripName')!;
+
 
     print(userNames);
     print(userIDs);
@@ -123,6 +128,25 @@ class _CRUDEventState extends State<CRUDEvent> {
           widget.docID ?? 'new',
           tripCode!
       );
+
+      //Send Notification
+      if(await InternetConnectionChecker().hasConnection){
+        String token = '';
+
+        for(int i=0; i<userIDs!.length; i++){
+          final tokenSnapshot = await FirebaseFirestore.instance.collection('userTokens')
+              .doc(userIDs![i]).get();
+
+          token = tokenSnapshot.get('token');
+
+          await SendNotification.toSpecific(
+          "$selectedUserName To $tripName",
+              titleController.text,
+          token,
+          "HomePage");
+
+        }
+      }
 
       //upload Data to Firebase
       /*if(await InternetConnectionChecker().hasConnection){

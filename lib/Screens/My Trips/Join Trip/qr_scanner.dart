@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_navigation/get_navigation.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_scanner_overlay/qr_scanner_overlay.dart';
 import 'package:splitshare/Models/trip_info_manager.dart';
@@ -26,45 +27,54 @@ class _QRScannerState extends State<QRScanner> {
   Future<void> joinTrip() async {
     final messenger = ScaffoldMessenger.of(context);
 
-    //Check if tripCode Exists
-    QuerySnapshot snapshot =
-    await FirebaseFirestore
-        .instance
-        .collection('trips')
-        .where(FieldPath.documentId, isEqualTo: tripCode)
-        .get();
-    if(snapshot.docs.isNotEmpty){
-
-      //save tripCode into userData
-      await FirebaseFirestore
-          .instance
-          .collection('userData')
-          .doc(FirebaseAuth.instance.currentUser!.uid).update({
-        'tripCodes': FieldValue.arrayUnion([tripCode])
-      });
-      //save userID into trip's users list
+    if(await InternetConnectionChecker().hasConnection){
+      //Check if tripCode Exists
+      QuerySnapshot snapshot =
       await FirebaseFirestore
           .instance
           .collection('trips')
-          .doc(tripCode).update({
-        'users': FieldValue.arrayUnion([FirebaseAuth.instance.currentUser!.uid])
-      });
+          .where(FieldPath.documentId, isEqualTo: tripCode)
+          .get();
+      if(snapshot.docs.isNotEmpty){
 
-      //Save to Prefs
-      TripInfoManager().saveTripInfo(tripCode);
+        //save tripCode into userData
+        await FirebaseFirestore
+            .instance
+            .collection('userData')
+            .doc(FirebaseAuth.instance.currentUser!.uid).update({
+          'tripCodes': FieldValue.arrayUnion([tripCode])
+        });
+        //save userID into trip's users list
+        await FirebaseFirestore
+            .instance
+            .collection('trips')
+            .doc(tripCode).update({
+          'users': FieldValue.arrayUnion([FirebaseAuth.instance.currentUser!.uid])
+        });
 
-      Get.to(
-              () => BottomBar(bottomIndex: 0),
-          transition: Transition.fade
-      );
+        //Save to Prefs
+        TripInfoManager().saveTripInfo(tripCode);
+
+        Get.to(
+                () => BottomBar(bottomIndex: 0),
+            transition: Transition.fade
+        );
+      }
+      else{
+        setState(() {
+          _isLoading = false;
+        });
+
+        messenger.showSnackBar(
+            const SnackBar(content: Text("Trip Code Isn't Correct"))
+        );
+      }
     }
     else{
-      setState(() {
-        _isLoading = false;
-      });
-
       messenger.showSnackBar(
-          const SnackBar(content: Text("Trip Code Isn't Correct"))
+        const SnackBar(
+            content: Text('You are not connected to the internet.')
+        )
       );
     }
   }

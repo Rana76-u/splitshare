@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -36,6 +37,7 @@ class _MyTripsState extends State<MyTrips> {
   @override
   void initState() {
     _isLoading = true;
+    getToken();
     _checkAndSaveUser();
     loadMyTrips();
     super.initState();
@@ -45,6 +47,24 @@ class _MyTripsState extends State<MyTrips> {
   void dispose() {
     _focusNode.dispose();
     super.dispose();
+  }
+
+  String? phoneToken = '';
+  void getToken() async {
+    await FirebaseMessaging.instance.getToken().then(
+            (token) {
+          setState(() {
+            phoneToken = token;
+          });
+          saveTokenInFirebase(token!);
+        }
+    );
+  }
+  void saveTokenInFirebase(String token) async {
+    await FirebaseFirestore.instance.collection('userTokens')
+        .doc(FirebaseAuth.instance.currentUser!.uid).set({
+      'token': token,
+    });
   }
 
   _checkAndSaveUser() async {
