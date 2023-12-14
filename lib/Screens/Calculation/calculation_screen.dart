@@ -13,7 +13,6 @@ class CalculationScreen extends StatefulWidget {
 }
 
 class _CalculationScreenState extends State<CalculationScreen> {
-
   bool _isLoading = false;
   bool connection = false;
 
@@ -29,7 +28,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
   List<String> docIDs = [];
   List<String> isChanged = [];
   List<String> userNames = [];
-  List<String>? userIDs = [];
+  List<String> userIDs = [];
   List<int> searchIndexes = [];
 
   List<double> totalOfIndividuals = [];
@@ -57,7 +56,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     userNames = prefs.getStringList('userNames')!;
-    userIDs = prefs.getStringList('userIDs');
+    userIDs = prefs.getStringList('userIDs')!;
     providerNames = prefs.getStringList('providerNames')!;
     isChanged = prefs.getStringList('isChanged')!;
 
@@ -89,13 +88,17 @@ class _CalculationScreenState extends State<CalculationScreen> {
 
 // Update the lists with sorted data
     titles = itemsWithTimes.map((item) => item['title'].toString()).toList();
-    descriptions = itemsWithTimes.map((item) => item['description'].toString()).toList();
+    descriptions =
+        itemsWithTimes.map((item) => item['description'].toString()).toList();
     amounts = itemsWithTimes.map((item) => item['amount'].toString()).toList();
     times = itemsWithTimes.map((item) => item['time'].toString()).toList();
-    providerNames = itemsWithTimes.map((item) => item['providerName'].toString()).toList();
-    providerIDs = itemsWithTimes.map((item) => item['providerID'].toString()).toList();
+    providerNames =
+        itemsWithTimes.map((item) => item['providerName'].toString()).toList();
+    providerIDs =
+        itemsWithTimes.map((item) => item['providerID'].toString()).toList();
     docIDs = itemsWithTimes.map((item) => item['docID'].toString()).toList();
-    isChanged = itemsWithTimes.map((item) => item['isChanged'].toString()).toList();
+    isChanged =
+        itemsWithTimes.map((item) => item['isChanged'].toString()).toList();
 
     getTotal();
 
@@ -106,18 +109,18 @@ class _CalculationScreenState extends State<CalculationScreen> {
 
   void getTotal() {
     //total Spending
-    for(int i=0; i<amounts.length; i++){
+    for (int i = 0; i < amounts.length; i++) {
       total = total + double.parse(amounts[i]);
     }
 
     //Per Person
-    perPerson = total /userNames.length;
+    perPerson = total / userNames.length;
 
     //total of individual
     double tempTotal = 0.0;
-    for(int i=0; i<userNames.length; i++){
-      for(int j=0; j<titles.length; j++){
-        if(userIDs![i] == providerIDs[j]){
+    for (int i = 0; i < userNames.length; i++) {
+      for (int j = 0; j < titles.length; j++) {
+        if (userIDs[i] == providerIDs[j]) {
           tempTotal = tempTotal + double.parse(amounts[j]);
         }
       }
@@ -133,7 +136,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
     List<double> differences = [];
 
     //Extracts the differences between individual total and per person cost
-    for(int i=0; i<totalOfIndividuals.length; i++){
+    for (int i = 0; i < totalOfIndividuals.length; i++) {
       double difference = totalOfIndividuals[i] - perPerson;
       differences.add(difference);
     }
@@ -165,7 +168,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
   }
 
   void splitCost(List<double> expenses) {
-
     // Initialize a list to track the balance for each person
     List<double> balance = List.filled(expenses.length, 0);
 
@@ -179,9 +181,11 @@ class _CalculationScreenState extends State<CalculationScreen> {
       for (int j = 0; j < expenses.length; j++) {
         if (i != j) {
           if (balance[i] < 0 && balance[j] > 0) {
-            double amount = balance[i].abs() < balance[j] ? balance[i].abs() : balance[j];
+            double amount =
+                balance[i].abs() < balance[j] ? balance[i].abs() : balance[j];
             //print('Person ${i + 1} owes Person ${j + 1}: \$${amount.toStringAsFixed(2)}');
-            splitLogs.add('${userIDs![i]} will give ${userIDs![j]} ${amount.toStringAsFixed(2)} Tk');
+            splitLogs.add(
+                '${userIDs[i]} will give ${userIDs[j]} ${amount.toStringAsFixed(2)} Tk');
             balance[i] += amount;
             balance[j] -= amount;
           }
@@ -193,32 +197,34 @@ class _CalculationScreenState extends State<CalculationScreen> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        onWillPop: () async {
-          Get.to(() => BottomBar(bottomIndex: 0),
-              transition: Transition.fade
-          );
+      onWillPop: () async {
+        Get.to(() => BottomBar(bottomIndex: 0), transition: Transition.fade);
 
-          return false;
-        },
+        return false;
+      },
       child: Scaffold(
-        appBar: HomeAppBar(connected: connection, isLoading: false,),
-        body: _isLoading ?
-        const Center(
-          child: CircularProgressIndicator(),
-        )
-            :
-        SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            child: Column(
-              children: [
-                spendingCard(),
-                const SizedBox(height: 10,),
-                individualSpending()
-              ],
-            ),
-          ),
+        appBar: HomeAppBar(
+          connected: connection,
+          isLoading: false,
         ),
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  child: Column(
+                    children: [
+                      spendingCard(),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      individualSpending()
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -240,16 +246,14 @@ class _CalculationScreenState extends State<CalculationScreen> {
                     style: TextStyle(
                         fontFamily: 'Urbanist',
                         fontWeight: FontWeight.bold,
-                        fontSize: 20
-                    ),
+                        fontSize: 20),
                   ),
                   Text(
                     'Per Person: ${perPerson.toStringAsFixed(2)}/-',
                     style: const TextStyle(
                         fontFamily: 'Urbanist',
                         fontWeight: FontWeight.bold,
-                        fontSize: 15
-                    ),
+                        fontSize: 15),
                   ),
                 ],
               ),
@@ -258,8 +262,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                 style: const TextStyle(
                     fontFamily: 'Urbanist',
                     fontWeight: FontWeight.bold,
-                    fontSize: 30
-                ),
+                    fontSize: 30),
               ),
             ],
           ),
@@ -299,8 +302,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                   userNames[index],
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      overflow: TextOverflow.ellipsis
-                  ),
+                      overflow: TextOverflow.ellipsis),
                 ),
                 trailing: Text(
                   '${totalOfIndividuals[index]}/-',
@@ -308,22 +310,20 @@ class _CalculationScreenState extends State<CalculationScreen> {
                       fontWeight: FontWeight.bold,
                       fontSize: 25,
                       overflow: TextOverflow.ellipsis,
-                      color: totalOfIndividuals[index] >= perPerson ? Colors.green : Colors.redAccent
-                  ),
+                      color: totalOfIndividuals[index] >= perPerson
+                          ? Colors.green
+                          : Colors.redAccent),
                 ),
                 tileColor: Colors.blue.shade50,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)
-                ),
+                    borderRadius: BorderRadius.circular(10)),
               ),
-
               Card(
                 elevation: 0,
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.only(
                       bottomRight: Radius.circular(10),
-                      bottomLeft: Radius.circular(10)
-                  ),
+                      bottomLeft: Radius.circular(10)),
                 ),
                 color: Colors.blueGrey.shade300,
                 child: ListView.builder(
@@ -331,12 +331,14 @@ class _CalculationScreenState extends State<CalculationScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: splitLogs.length,
                   itemBuilder: (context, splitLogIndex) {
-                    if(splitLogs[splitLogIndex].contains("will give ${userIDs![index]}")){
-
-                      int indexOfUserID = userIDs!.indexOf(splitLogs[splitLogIndex].substring(0, 28));
+                    if (splitLogs[splitLogIndex]
+                        .contains("will give ${userIDs[index]}")) {
+                      int indexOfUserID = userIDs
+                          .indexOf(splitLogs[splitLogIndex].substring(0, 28));
                       String userName = userNames[indexOfUserID];
 
-                      String amount = splitLogs[splitLogIndex].substring(68, splitLogs[splitLogIndex].length);
+                      String amount = splitLogs[splitLogIndex]
+                          .substring(68, splitLogs[splitLogIndex].length);
 
                       return Padding(
                         padding: const EdgeInsets.all(10),
@@ -346,16 +348,14 @@ class _CalculationScreenState extends State<CalculationScreen> {
                             Text(
                               "$userName will give : $amount",
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                overflow: TextOverflow.clip
-                              ),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  overflow: TextOverflow.clip),
                             )
                           ],
                         ),
                       );
-                    }
-                    else{
+                    } else {
                       return const SizedBox();
                     }
                   },

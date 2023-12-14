@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:splitshare/Models/global_variables.dart';
 import 'package:splitshare/Models/trip_info_manager.dart';
 import 'package:splitshare/Widgets/bottom_nav_bar.dart';
 import 'package:splitshare/Widgets/loading.dart';
@@ -24,6 +25,9 @@ class _CreateTripState extends State<CreateTrip> {
   bool _isLoading = false;
 
   Future<void> createTrip() async {
+
+    firstLoadTripCode = randomTripCode;
+
     await FirebaseFirestore
         .instance
         .collection('trips')

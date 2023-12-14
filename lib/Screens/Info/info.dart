@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:splitshare/Models/trip_info_manager.dart';
 import 'package:splitshare/Screens/Home/home_appbar.dart';
 import 'package:splitshare/Screens/My%20Trips/my_trips.dart';
 import 'package:splitshare/Widgets/bottom_nav_bar.dart';
@@ -28,8 +27,9 @@ class _InfoPageState extends State<InfoPage> {
   String tripDate = '';
   String tripName = '';
   String tripCode = '';
-  List<dynamic> users = [];
-  List<dynamic> userNames = [];
+  List<String> userIDs = [];
+  List<String> userNames = [];
+  List<String> providerIDs = [];
 
   @override
   void initState() {
@@ -56,8 +56,10 @@ class _InfoPageState extends State<InfoPage> {
     tripDate = prefs.getString('tripDate')!;
     tripName = prefs.getString('tripName')!;
     tripCode = prefs.getString('tripCode')!;
-    users = prefs.getStringList('users')!;
+    userIDs = prefs.getStringList('userIDs')!;
     userNames = prefs.getStringList('userNames')!;
+
+    providerIDs = prefs.getStringList('providerIDs')!;
 
     parseTimestampString(tripDate);
 
@@ -116,82 +118,96 @@ class _InfoPageState extends State<InfoPage> {
     final messenger = ScaffoldMessenger.of(context);
 
     // Dismiss the dialog
-    if(mounted){
+    if (mounted) {
       Navigator.pop(context);
     }
 
-    if(await InternetConnectionChecker().hasConnection){
+    //Internet connection needed for deletion
+    if (await InternetConnectionChecker().hasConnection) {
+
       //can't remove tripCreator
-      if(users[index] == tripCreator){
+      if (userIDs[index] == tripCreator) {
         messenger.showSnackBar(
-            const SnackBar(
-                content: Text('Can not remove trip creator')
-            )
-        );
+            const SnackBar(content: Text('Can not remove trip creator')));
       }
-      else{
-
-        setState(() {
-          _isLoading = true;
-        });
-
-        //Delete from trip
-        FirebaseFirestore
-            .instance
-            .collection('trips')
-            .doc(tripCode)
-            .update({
-          'users': FieldValue.arrayRemove([users[index]]),
-        });
-
-        //Delete from userData
-        FirebaseFirestore
-            .instance
-            .collection('userData')
-            .doc(users[index])
-            .update({
-          'tripCodes' : FieldValue.arrayRemove([tripCode])
-        });
-
-        //If removes himself
-        if(users[index] == FirebaseAuth.instance.currentUser!.uid){
-          messenger.showSnackBar(
-              const SnackBar(content: Text('You left the trip'))
+      else {
+        //checks if theres any contribution remains for the user to delete
+        if(providerIDs.contains(userIDs[index])){
+          messenger.showSnackBar(const SnackBar(
+            duration: Duration(seconds: 3),
+              content: Text('This person has contributions in this trip remove/edit them first, then try again.'))
           );
-
-          Get.to(
-                  () => const MyTrips(),
-              transition: Transition.fade
-          );
+          /*showDialog(
+            context: infoContext,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text("Deletion Failed"),
+                content: const Text('This person has contributions in this trip remove/edit them first, then try again.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      // Dismiss the dialog
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Cancel"),
+                  ),
+                ],
+              );
+            },
+          );*/
         }
         else{
-          //Delete from lists
-          users.removeAt(index);
-          userNames.removeAt(index);
+          setState(() {
+            _isLoading = true;
+          });
 
-          //Delete from SharedPreferences
-          TripInfoManager().saveUsers(users.cast<String>());
+          //Delete from trip
+          FirebaseFirestore.instance.collection('trips').doc(tripCode).update({
+            'users': FieldValue.arrayRemove([userIDs[index]]),
+          });
 
-          TripInfoManager().saveUserNames(userNames.cast<String>());
+          //Delete from userData
+          FirebaseFirestore.instance
+              .collection('userData')
+              .doc(userIDs[index])
+              .update({
+            'tripCodes': FieldValue.arrayRemove([tripCode])
+          });
 
-          messenger.showSnackBar(
-              const SnackBar(content: Text('User Removed'))
-          );
+
+          //If removes person himself
+          if (userIDs[index] == FirebaseAuth.instance.currentUser!.uid) {
+            messenger
+                .showSnackBar(const SnackBar(content: Text('You left the trip')));
+
+            Get.to(() => const MyTrips(), transition: Transition.fade);
+          }
+          else {
+            //Delete from lists
+            userIDs.removeAt(index);
+            userNames.removeAt(index);
+
+            //Delete from SharedPreferences
+            final prefs = await SharedPreferences.getInstance();
+            prefs.setStringList('userIDs', userIDs);
+
+            prefs.setStringList('userNames', userNames);
+
+            messenger.showSnackBar(const SnackBar(content: Text('User Removed')));
+          }
+
+          setState(() {
+            _isLoading = false;
+          });
         }
 
-        setState(() {
-          _isLoading = false;
-        });
       }
-    }
-    else{
-      messenger.showSnackBar(
-          const SnackBar(
-              content: Text('Internet Connection Required To Perform Deletion')
-          )
-      );
-    }
 
+    }
+    else {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Internet Connection Required To Perform Deletion')));
+    }
   }
 
   @override
@@ -237,7 +253,7 @@ class _InfoPageState extends State<InfoPage> {
                       ),
 
                       //users
-                      Text('Total ${users.length} Person'),
+                      Text('Total ${userIDs.length} Person'),
                       const SizedBox(
                         height: 10,
                       ),
@@ -262,12 +278,10 @@ class _InfoPageState extends State<InfoPage> {
           width: MediaQuery.of(context).size.width * 0.5 - 30,
           child: Text.rich(TextSpan(
               text: 'Created by ',
-              style: const TextStyle(
-                  fontSize: 12, color: Colors.grey),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
               children: [
                 TextSpan(
-                    text:
-                    userNames[users.indexOf(tripCreator)],
+                    text: userNames[userIDs.indexOf(tripCreator)],
                     style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         overflow: TextOverflow.clip,
@@ -300,8 +314,7 @@ class _InfoPageState extends State<InfoPage> {
           children: [
             const Text(
               "#Access Code",
-              style:
-              TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             SelectableText(tripCode,
                 style: const TextStyle(
@@ -313,12 +326,9 @@ class _InfoPageState extends State<InfoPage> {
                 //copy
                 GestureDetector(
                   onTap: () {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(const SnackBar(
-                        content:
-                        Text('Trip Code Copied')));
-                    Clipboard.setData(
-                        ClipboardData(text: tripCode));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Trip Code Copied')));
+                    Clipboard.setData(ClipboardData(text: tripCode));
                   },
                   child: Container(
                     height: 37,
@@ -346,10 +356,8 @@ class _InfoPageState extends State<InfoPage> {
                 //QR Code
                 GestureDetector(
                   onTap: () {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(const SnackBar(
-                        content:
-                        Text('QR Code Generated')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('QR Code Generated')));
                     _generateQR();
                   },
                   child: Container(
@@ -411,15 +419,14 @@ class _InfoPageState extends State<InfoPage> {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: users.length,
+      itemCount: userIDs.length,
       itemBuilder: (context, index) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 5),
           child: ListTile(
               title: Text(
                 userNames[index],
-                style: const TextStyle(
-                    overflow: TextOverflow.clip),
+                style: const TextStyle(overflow: TextOverflow.clip),
               ),
               tileColor: Colors.blue.shade50,
               shape: RoundedRectangleBorder(
@@ -427,29 +434,29 @@ class _InfoPageState extends State<InfoPage> {
               trailing: GestureDetector(
                 onTap: () {
                   showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text("Confirm Delete"),
-                          content: const Text("Are you sure you want to delete?"),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                // Dismiss the dialog
-                                Navigator.pop(context);
-                              },
-                              child: const Text("Cancel"),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                // Perform the delete action
-                                deleteUser(index = index);
-                              },
-                              child: const Text("Delete"),
-                            ),
-                          ],
-                        );
-                      },
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text("Confirm Delete"),
+                        content: const Text("Are you sure you want to delete?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              // Dismiss the dialog
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Cancel"),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              // Perform the delete action
+                              deleteUser(index = index);
+                            },
+                            child: const Text("Delete"),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
                 child: const SizedBox(
@@ -464,8 +471,7 @@ class _InfoPageState extends State<InfoPage> {
                     ),
                   ),
                 ),
-              )
-          ),
+              )),
         );
       },
     );
@@ -477,9 +483,7 @@ class _InfoPageState extends State<InfoPage> {
       child: Center(
         child: Text(
           'Version 2.0',
-          style: TextStyle(
-              color: Colors.grey
-          ),
+          style: TextStyle(color: Colors.grey),
           textAlign: TextAlign.center,
         ),
       ),

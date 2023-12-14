@@ -20,7 +20,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
   Timer? connectionTimer;
 
   bool isFirstTimeLoading = true;
@@ -52,7 +51,7 @@ class _HomePageState extends State<HomePage> {
   final FocusNode _focusNode = FocusNode();
 
   @override
-  initState(){
+  initState() {
     _isLoading = true;
     startConnectionCheckTimer();
     loadTripInfo();
@@ -69,8 +68,9 @@ class _HomePageState extends State<HomePage> {
 
   void startConnectionCheckTimer() {
     // Create a timer that checks the connection status every 5 seconds.
-    connectionTimer = Timer.periodic(const Duration(milliseconds: 2000), (timer) {
-      if(mounted){
+    connectionTimer =
+        Timer.periodic(const Duration(milliseconds: 2000), (timer) {
+      if (mounted) {
         checkConnection();
       }
     });
@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> checkConnection() async {
     bool hasConnection = await InternetConnectionChecker().hasConnection;
-    if(mounted){
+    if (mounted) {
       if (hasConnection != connection) {
         // The connection status has changed.
         setState(() {
@@ -92,8 +92,7 @@ class _HomePageState extends State<HomePage> {
               isBackupInProgress = false;
             });
           }
-        }
-        else {
+        } else {
           getDataFromSharedPreferences();
         }
       }
@@ -101,20 +100,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadTripInfo() async {
-    if(connection){
+    if (connection) {
       List<dynamic> loadTripInfoUserIDs = [];
       List<dynamic> loadTripInfoUserNames = [];
 
       final prefs = await SharedPreferences.getInstance();
 
-      if(firstLoadTripCode != ''){
+      if (firstLoadTripCode != '') {
         //setState(() {
-          tripCode = firstLoadTripCode;
+        tripCode = firstLoadTripCode;
         //});
-      }
-      else{
+      } else {
         //setState(() {
-          tripCode = prefs.getString('tripCode') ?? '';
+        tripCode = prefs.getString('tripCode') ?? '';
         //});
       }
 
@@ -124,7 +122,7 @@ class _HomePageState extends State<HomePage> {
       });*/
 
       //This was inside backupData
-      if(prefs.containsKey('titles')){
+      if (prefs.containsKey('titles')) {
         titles = prefs.getStringList('titles') ?? [];
         descriptions = prefs.getStringList('descriptions') ?? [];
         amounts = prefs.getStringList('amounts') ?? [];
@@ -134,42 +132,39 @@ class _HomePageState extends State<HomePage> {
         docIDs = prefs.getStringList('docIDs') ?? [];
         isChanged = prefs.getStringList('isChanged') ?? [];
 
-        for(int i=0; i<titles.length; i++){
+        for (int i = 0; i < titles.length; i++) {
           searchIndexes.add(i);
         }
       }
 
-      if(prefs.containsKey('userNames')){
+      if (prefs.containsKey('userNames')) {
         userNames = prefs.getStringList('userNames') ?? [];
         userIDs = prefs.getStringList('userIDs') ?? [];
       }
 
-
       //Loads all trip info
-      DocumentSnapshot tripCodeSnapshot =
-      await FirebaseFirestore
-          .instance
+      DocumentSnapshot tripCodeSnapshot = await FirebaseFirestore.instance
           .collection('trips')
           .doc(tripCode)
           .get();
       await prefs.setString('tripCreator', tripCodeSnapshot.get('creator'));
 
       loadTripInfoUserIDs = tripCodeSnapshot.get('users');
-      List<String> stringUserIdsList = loadTripInfoUserIDs.map((item) => item.toString()).toList();
+      List<String> stringUserIdsList =
+          loadTripInfoUserIDs.map((item) => item.toString()).toList();
       await prefs.setStringList('userIDs', stringUserIdsList);
 
       //loads and save all usernames
-      for(int i=0; i<loadTripInfoUserIDs.length; i++){
-        DocumentSnapshot userSnapshot =
-        await FirebaseFirestore
-            .instance
+      for (int i = 0; i < loadTripInfoUserIDs.length; i++) {
+        DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
             .collection('userData')
             .doc(loadTripInfoUserIDs[i])
             .get();
 
         loadTripInfoUserNames.add(userSnapshot.get('name'));
       }
-      List<String> stringUserNamesList = loadTripInfoUserNames.map((item) => item.toString()).toList();
+      List<String> stringUserNamesList =
+          loadTripInfoUserNames.map((item) => item.toString()).toList();
       await prefs.setStringList('userNames', stringUserNamesList);
       //lastEdited = DateTime.parse(prefs.getString('lastEdited') ?? '');
 
@@ -182,25 +177,25 @@ class _HomePageState extends State<HomePage> {
       await backupData();
     }
 
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> backupData() async {
     final messenger = ScaffoldMessenger.of(context);
     final prefs = await SharedPreferences.getInstance();
 
-    messenger.showSnackBar(
-      const SnackBar(
+    messenger.showSnackBar(const SnackBar(
         duration: Duration(milliseconds: 500),
-          content: Text('Backing up content.')
-      )
-    );
-    
-    if(isChanged.isNotEmpty){
-      for(int index=0; index<isChanged.length; index++){
-        if(index < isChanged.length && isChanged[index] == 'changed'){ //&& tripCode != ''
+        content: Text('Backing up content.')));
+
+    if (isChanged.isNotEmpty) {
+      for (int index = 0; index < isChanged.length; index++) {
+        if (index < isChanged.length && isChanged[index] == 'changed') {
+          //&& tripCode != ''
 
           /*ManageCRUDOperations().uploadInfo(
                 titles[index],
@@ -211,8 +206,7 @@ class _HomePageState extends State<HomePage> {
                 docIDs[index],
                 tripCode
             );*/
-          FirebaseFirestore
-              .instance
+          FirebaseFirestore.instance
               .collection('trips')
               .doc(tripCode)
               .collection('Events')
@@ -226,13 +220,15 @@ class _HomePageState extends State<HomePage> {
             'providedBy': providerIDs[index],
           });
 
-          setState(() async {
-            if(index < isChanged.length) {
-              isChanged[index] = 'notChanged';
-              //Also Save new isChanged lists into prefs
-              await prefs.setStringList('isChanged', isChanged);
-            }
-          });
+          if (mounted) {
+            setState(() async {
+              if (index < isChanged.length) {
+                isChanged[index] = 'notChanged';
+                //Also Save new isChanged lists into prefs
+                await prefs.setStringList('isChanged', isChanged);
+              }
+            });
+          }
         }
       }
 
@@ -240,12 +236,9 @@ class _HomePageState extends State<HomePage> {
       await prefs.setStringList('isChanged', isChanged);*/
     }
 
-    messenger.showSnackBar(
-        const SnackBar(
-            duration: Duration(milliseconds: 500),
-            content: Text('Backup Complete')
-        )
-    );
+    messenger.showSnackBar(const SnackBar(
+        duration: Duration(milliseconds: 500),
+        content: Text('Backup Complete')));
   }
 
   Future<void> saveDataToSharedPreferences() async {
@@ -294,13 +287,17 @@ class _HomePageState extends State<HomePage> {
 
 // Update the lists with sorted data
     titles = itemsWithTimes.map((item) => item['title'].toString()).toList();
-    descriptions = itemsWithTimes.map((item) => item['description'].toString()).toList();
+    descriptions =
+        itemsWithTimes.map((item) => item['description'].toString()).toList();
     amounts = itemsWithTimes.map((item) => item['amount'].toString()).toList();
     times = itemsWithTimes.map((item) => item['time'].toString()).toList();
-    providerNames = itemsWithTimes.map((item) => item['providerName'].toString()).toList();
-    providerIDs = itemsWithTimes.map((item) => item['providerID'].toString()).toList();
+    providerNames =
+        itemsWithTimes.map((item) => item['providerName'].toString()).toList();
+    providerIDs =
+        itemsWithTimes.map((item) => item['providerID'].toString()).toList();
     docIDs = itemsWithTimes.map((item) => item['docID'].toString()).toList();
-    isChanged = itemsWithTimes.map((item) => item['isChanged'].toString()).toList();
+    isChanged =
+        itemsWithTimes.map((item) => item['isChanged'].toString()).toList();
 
     setState(() {
       _isLoading = false;
@@ -311,7 +308,8 @@ class _HomePageState extends State<HomePage> {
     final navigator = Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => BottomBar(bottomIndex: 0),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            BottomBar(bottomIndex: 0),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return child;
         },
@@ -333,14 +331,15 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       searchIndexes.clear();
 
-      if(searchController.text == ''){
-        for(int i=0; i<titles.length; i++){
+      if (searchController.text == '') {
+        for (int i = 0; i < titles.length; i++) {
           searchIndexes.add(i);
         }
-      }
-      else{
-        for(int i=0; i<titles.length; i++){
-          if(titles[i].toLowerCase().contains(searchController.text.toLowerCase())){
+      } else {
+        for (int i = 0; i < titles.length; i++) {
+          if (titles[i]
+              .toLowerCase()
+              .contains(searchController.text.toLowerCase())) {
             searchIndexes.add(i);
           }
         }
@@ -348,18 +347,17 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void performProviderSearch(int index){
-    if(index != -1){
+  void performProviderSearch(int index) {
+    if (index != -1) {
       searchIndexes.clear();
 
-      for(int i=0; i<providerNames.length; i++){
-        if(userNames[index].toLowerCase() == providerNames[i].toLowerCase()){
+      for (int i = 0; i < providerNames.length; i++) {
+        if (userNames[index].toLowerCase() == providerNames[i].toLowerCase()) {
           searchIndexes.add(i);
         }
       }
-    }
-    else{
-      for(int i=0; i<titles.length; i++){
+    } else {
+      for (int i = 0; i < titles.length; i++) {
         searchIndexes.add(i);
       }
     }
@@ -371,16 +369,17 @@ class _HomePageState extends State<HomePage> {
       onWillPop: handleWillPop,
       child: Scaffold(
         appBar: HomeAppBar(
-            connected: connection,
+          connected: connection,
           isLoading: _isLoading,
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: const HomeFloatingActionButton(),
         body: RefreshIndicator(
           onRefresh: _handleRefresh,
-          child: _isLoading ?
-          const Center(
-            child: CircularProgressIndicator(), /*Column(
+          child: _isLoading
+              ? const Center(
+                  child:
+                      CircularProgressIndicator(), /*Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -398,50 +397,49 @@ class _HomePageState extends State<HomePage> {
                 )
               ],
             )*/
-          )
+                )
               :
-          //SingleChildScrollView
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                //Internet Checker
-                if(!connection)...[
-                  Container(
-                    color: Colors.red,
-                    width: double.infinity,
-                    child: const Text(
-                      "no internet connection",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white
+              //SingleChildScrollView
+              SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      //Internet Checker
+                      if (!connection) ...[
+                        Container(
+                          color: Colors.red,
+                          width: double.infinity,
+                          child: const Text(
+                            "no internet connection",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      ],
+
+                      searchFilterWidget(),
+
+                      if (connection) ...[
+                        SingleChildScrollView(
+                          child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: loadItemFromFutureBuilder()),
+                        )
+                      ] else ...[
+                        //Show From Prefs
+                        Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: loadItemFromPrefs())
+                      ],
+
+                      const SizedBox(
+                        height: 100,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                ],
-
-                searchFilterWidget(),
-
-                if(connection)...[
-                  SingleChildScrollView(
-                    child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: loadItemFromFutureBuilder()
-                    ),
-                  )
-                ]
-                else...[
-                  //Show From Prefs
-                  Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: loadItemFromPrefs()
-                  )
-                ],
-
-                const SizedBox(height: 100,),
-              ],
-            ),
-          ),
+                    ],
+                  ),
+                ),
         ),
       ),
     );
@@ -472,7 +470,8 @@ class _HomePageState extends State<HomePage> {
                       borderSide: const BorderSide(
                         color: Colors.grey,
                       ),
-                    ), //InputBorder.none,
+                    ),
+                    //InputBorder.none,
                     isDense: true,
                     contentPadding: const EdgeInsets.only(left: 15),
                     //focusedBorder: InputBorder.none,
@@ -484,28 +483,19 @@ class _HomePageState extends State<HomePage> {
                       fontSize: 13.0,
                       color: Colors.grey.shade500,
                     ),
-                    suffixIcon: _focusNode.hasFocus ?
-                    GestureDetector(
-                        onTap: () {
-                          setState(() {
-
-                          });
-                        },
-                        child: Icon(
-                          Icons.cancel,
-                          size: 15,
-                          color: Colors.grey.shade400,
-                        )
-                    )
-                        :
-                    GestureDetector(
-                        onTap: () {
-
-                        },
-                        child: const Icon(
-                            Icons.search_rounded
-                        )
-                    ),
+                    suffixIcon: _focusNode.hasFocus
+                        ? GestureDetector(
+                            onTap: () {
+                              setState(() {});
+                            },
+                            child: Icon(
+                              Icons.cancel,
+                              size: 15,
+                              color: Colors.grey.shade400,
+                            ))
+                        : GestureDetector(
+                            onTap: () {},
+                            child: const Icon(Icons.search_rounded)),
                   ),
                   controller: searchController,
                   onChanged: (value) {
@@ -524,19 +514,19 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         //Search Loading
-        _isSearching ?
-        LinearProgressIndicator(
-          color: Colors.blue.shade100,
-        )
-            :
-        const SizedBox(
-          height: 0,
-          width: 0,
-        ),
+        _isSearching
+            ? LinearProgressIndicator(
+                color: Colors.blue.shade100,
+              )
+            : const SizedBox(
+                height: 0,
+                width: 0,
+              ),
 
         //User names
         Padding(
-          padding: const EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 10),
+          padding:
+              const EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 10),
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -554,15 +544,14 @@ class _HomePageState extends State<HomePage> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 5),
                     child: TextButton(
-                      onPressed: (){
+                      onPressed: () {
                         setState(() {
-                          if(selectedProviderFlag == index){
+                          if (selectedProviderFlag == index) {
                             selectedProviderFlag = -1;
                             searchController.text = '';
                             performProviderSearch(-1);
                             //performSearch();
-                          }
-                          else{
+                          } else {
                             searchController.text = '';
                             selectedProviderFlag = index;
 
@@ -575,19 +564,19 @@ class _HomePageState extends State<HomePage> {
                       },
                       style: ButtonStyle(
                         backgroundColor: MaterialStateColor.resolveWith(
-                                (states) => selectedProviderFlag == index ? Colors.deepPurple : Colors.deepPurple.withOpacity(0.08)
-                        ),
-
+                            (states) => selectedProviderFlag == index
+                                ? Colors.deepPurple
+                                : Colors.deepPurple.withOpacity(0.08)),
                       ),
                       child: Center(
                           child: Text(
-                            userNames[index],
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: selectedProviderFlag == index ? Colors.white : Colors.black
-                            ),
-                          )
-                      ),
+                        userNames[index],
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: selectedProviderFlag == index
+                                ? Colors.white
+                                : Colors.black),
+                      )),
                     ),
                   );
                 },
@@ -600,7 +589,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget loadItemFromFutureBuilder() {
-
     titles.clear();
     descriptions.clear();
     amounts.clear();
@@ -611,14 +599,14 @@ class _HomePageState extends State<HomePage> {
     isChanged.clear();
 
     return FutureBuilder(
-      future: FirebaseFirestore
-          .instance
+      future: FirebaseFirestore.instance
           .collection('trips')
-          .doc(tripCode).collection('Events')
+          .doc(tripCode)
+          .collection('Events')
           .get(),
       builder: (context, snapshot) {
-        if(snapshot.hasData){
-          if(snapshot.data!.docs.isEmpty){
+        if (snapshot.hasData) {
+          if (snapshot.data!.docs.isEmpty) {
             //Saves Data Locally
             saveDataToSharedPreferences();
             return const Center(
@@ -630,30 +618,31 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             );
-          }
-          else{
+          } else {
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: snapshot.data!.docs.length,
               itemBuilder: (context, index) {
-
                 // Sort the documents by timestamp and reverse the list
                 final sortedDocs = snapshot.data!.docs
                     .map((doc) => {
-                  'doc': doc,
-                  'time': (doc.get('time')).toDate(),
-                }).toList()
+                          'doc': doc,
+                          'time': (doc.get('time')).toDate(),
+                        })
+                    .toList()
                   ..sort((a, b) => b['time']!.compareTo(a['time']));
 
                 final sortedDoc = sortedDocs[index];
                 String docID = sortedDoc['doc'].id ?? 'null';
                 String title = sortedDoc['doc'].get('title') ?? 'null';
-                String description = sortedDoc['doc'].get('description') ?? 'null';
+                String description =
+                    sortedDoc['doc'].get('description') ?? 'null';
                 double amount = sortedDoc['doc'].get('amount') ?? 0.0;
                 DateTime time = sortedDoc['time'] ?? DateTime.now();
                 String addedBy = sortedDoc['doc'].get('addedBy') ?? 'null';
-                String providedBy = sortedDoc['doc'].get('providedBy') ?? 'null';
+                String providedBy =
+                    sortedDoc['doc'].get('providedBy') ?? 'null';
 
                 /*String docID = snapshot.data!.docs[index].id;
               String title = snapshot.data?.docs[index].get('title');
@@ -664,16 +653,15 @@ class _HomePageState extends State<HomePage> {
               String providedBy = snapshot.data?.docs[index].get('providedBy');*/
 
                 return FutureBuilder(
-                  future: FirebaseFirestore
-                      .instance
+                  future: FirebaseFirestore.instance
                       .collection('userData')
                       .doc(providedBy)
                       .get(),
                   builder: (context, providerSnapshot) {
+                    String providerName =
+                        providerSnapshot.data?.get('name') ?? 'null';
 
-                    String providerName = providerSnapshot.data?.get('name') ?? 'null';
-
-                    if(providerName != 'null'){
+                    if (providerName != 'null') {
                       titles.add(title);
                       descriptions.add(description);
                       amounts.add(amount.toString());
@@ -683,59 +671,54 @@ class _HomePageState extends State<HomePage> {
                       docIDs.add(docID);
                       isChanged.add('notChanged');
 
-                      if(selectedProviderFlag == -1){
+                      if (selectedProviderFlag == -1) {
                         searchIndexes.add(index);
                       }
                     }
 
-                    if(providerSnapshot.hasData){
-
+                    if (providerSnapshot.hasData) {
                       //Saves Data Locally
                       saveDataToSharedPreferences();
 
-                      if(searchIndexes.contains(index)){
+                      if (searchIndexes.contains(index)) {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 5),
                           child: ListTile(
                             onTap: () {
                               Get.to(
-                                      () => CRUDEvent(
-                                    title: title,
-                                    amount: amount.toString(),
-                                    description: description,
-                                    provider: providerName,
-                                    docID: docID,
-                                    time: time.toString(),
-                                  ),
-                                  transition: Transition.fade
-                              );
+                                  () => CRUDEvent(
+                                        title: title,
+                                        amount: amount.toString(),
+                                        description: description,
+                                        provider: providerName,
+                                        docID: docID,
+                                        time: time.toString(),
+                                      ),
+                                  transition: Transition.fade);
                             },
                             //user image
                             leading: SizedBox(
                               height: 50,
                               width: 50,
                               child: FutureBuilder(
-                                future: FirebaseFirestore
-                                    .instance
+                                future: FirebaseFirestore.instance
                                     .collection('userData')
                                     .doc(addedBy)
                                     .get(),
                                 builder: (context, adderSnapshot) {
                                   //String adderImageUrl = adderSnapshot.data!.get('imageURL') ?? 'PicAlt';
-                                  if(adderSnapshot.hasData){
+                                  if (adderSnapshot.hasData) {
                                     return ClipRRect(
                                       borderRadius: BorderRadius.circular(50),
                                       child: Image.network(
-                                          adderSnapshot.data!.get('imageURL')
-                                      ),
+                                          adderSnapshot.data!.get('imageURL')),
                                     );
-                                  }
-                                  else if(snapshot.connectionState == ConnectionState.waiting){
+                                  } else if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
                                     return const Center(
                                       child: CircularProgressIndicator(),
                                     );
-                                  }
-                                  else{
+                                  } else {
                                     return const Center(
                                       child: Text('Error Loading Data'),
                                     );
@@ -747,19 +730,18 @@ class _HomePageState extends State<HomePage> {
                               title,
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  overflow: TextOverflow.ellipsis
-                              ),
+                                  overflow: TextOverflow.ellipsis),
                             ),
                             //user name
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  DateFormat('hh:mm a, EE, dd MMM,yy').format(time),
+                                  DateFormat('hh:mm a, EE, dd MMM,yy')
+                                      .format(time),
                                   style: const TextStyle(
                                       color: Colors.grey,
-                                      overflow: TextOverflow.ellipsis
-                                  ),
+                                      overflow: TextOverflow.ellipsis),
                                 ),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -770,8 +752,7 @@ class _HomePageState extends State<HomePage> {
                                         providerName,
                                         style: const TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            overflow: TextOverflow.ellipsis
-                                        ),
+                                            overflow: TextOverflow.ellipsis),
                                       ),
                                     ),
                                   ],
@@ -783,26 +764,22 @@ class _HomePageState extends State<HomePage> {
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 25,
-                                  overflow: TextOverflow.ellipsis
-                              ),
+                                  overflow: TextOverflow.ellipsis),
                             ),
                             tileColor: Colors.blue.shade50,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)
-                            ),
+                                borderRadius: BorderRadius.circular(10)),
                           ),
                         );
-                      }
-                      else{
+                      } else {
                         return const SizedBox();
                       }
-                    }
-                    else if(providerSnapshot.connectionState == ConnectionState.waiting){
+                    } else if (providerSnapshot.connectionState ==
+                        ConnectionState.waiting) {
                       return const Center(
                         child: LinearProgressIndicator(),
                       );
-                    }
-                    else{
+                    } else {
                       return const Center(
                         child: Text('Error Loading Data'),
                       );
@@ -812,13 +789,11 @@ class _HomePageState extends State<HomePage> {
               },
             );
           }
-        }
-        else if(snapshot.connectionState == ConnectionState.waiting){
+        } else if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: LinearProgressIndicator(),
           );
-        }
-        else{
+        } else {
           return const Center(
             child: Text('Error Loading Data'),
           );
@@ -828,8 +803,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget loadItemFromPrefs() {
-
-    if(titles.isEmpty){
+    if (titles.isEmpty) {
       return const Center(
         child: Text(
           'No Events Yet',
@@ -839,29 +813,27 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       );
-    }
-    else{
+    } else {
       return ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: titles.length,
         itemBuilder: (context, index) {
-          if(searchIndexes.contains(index)){
+          if (searchIndexes.contains(index)) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 5),
               child: ListTile(
                 onTap: () {
                   Get.to(
-                          () => CRUDEvent(
-                        title: titles[index],
-                        amount: amounts[index].toString(),
-                        description: descriptions[index],
-                        provider: providerNames[index],
-                        docID: docIDs[index],
-                        time: times[index],
-                      ),
-                      transition: Transition.fade
-                  );
+                      () => CRUDEvent(
+                            title: titles[index],
+                            amount: amounts[index].toString(),
+                            description: descriptions[index],
+                            provider: providerNames[index],
+                            docID: docIDs[index],
+                            time: times[index],
+                          ),
+                      transition: Transition.fade);
                 },
                 //user image
                 leading: ClipRRect(
@@ -872,19 +844,17 @@ class _HomePageState extends State<HomePage> {
                   titles[index],
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      overflow: TextOverflow.ellipsis
-                  ),
-                ), 
+                      overflow: TextOverflow.ellipsis),
+                ),
                 //user name
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      DateFormat('hh:mm a, EE, dd MMM,yy').format(DateTime.parse(times[index])),
+                      DateFormat('hh:mm a, EE, dd MMM,yy')
+                          .format(DateTime.parse(times[index])),
                       style: const TextStyle(
-                          color: Colors.grey,
-                          overflow: TextOverflow.ellipsis
-                      ),
+                          color: Colors.grey, overflow: TextOverflow.ellipsis),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -895,8 +865,7 @@ class _HomePageState extends State<HomePage> {
                             providerNames[index],
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                overflow: TextOverflow.ellipsis
-                            ),
+                                overflow: TextOverflow.ellipsis),
                           ),
                         ),
                       ],
@@ -908,17 +877,14 @@ class _HomePageState extends State<HomePage> {
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 25,
-                      overflow: TextOverflow.ellipsis
-                  ),
+                      overflow: TextOverflow.ellipsis),
                 ),
                 tileColor: Colors.blue.shade50,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)
-                ),
+                    borderRadius: BorderRadius.circular(10)),
               ),
             );
-          }
-          else{
+          } else {
             return const SizedBox();
           }
         },

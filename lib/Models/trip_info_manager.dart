@@ -31,7 +31,7 @@ class TripInfoManager {
     await prefs.setString('tripDate', tripDate);
     await prefs.setString('lastEdited', lastEdited);
     await prefs.setString('tripName', tripName);
-    await prefs.setStringList('users', usersStringList);
+    await prefs.setStringList('userIDs', usersStringList);
   }
 
   Future<String?> getTripName() async {
@@ -57,16 +57,6 @@ class TripInfoManager {
   Future<List<String>?> getTripUsers() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getStringList('users');
-  }
-
-  void saveUsers(List<String> users) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('users', users);
-  }
-
-  void saveUserNames(List<String> userNames) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('userNames', userNames);
   }
 
   Future<void> clearTripInfo() async {

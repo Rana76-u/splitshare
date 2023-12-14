@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:splitshare/Models/global_variables.dart';
 import 'package:splitshare/Models/trip_info_manager.dart';
 import 'package:splitshare/Screens/My%20Trips/Join%20Trip/qr_scanner.dart';
 import 'package:splitshare/Widgets/bottom_nav_bar.dart';
@@ -39,6 +40,8 @@ class _JoinTripState extends State<JoinTrip> {
               tripCode4Controller.text +
               tripCode5Controller.text +
               tripCode6Controller.text;
+
+      firstLoadTripCode = tripCode;
     });
 
     //Check if tripCode Exists
