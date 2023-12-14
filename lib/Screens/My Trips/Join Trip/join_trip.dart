@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:splitshare/Models/trip_info_manager.dart';
+import 'package:splitshare/Screens/My%20Trips/Join%20Trip/qr_scanner.dart';
 import 'package:splitshare/Widgets/bottom_nav_bar.dart';
 
 class JoinTrip extends StatefulWidget {
@@ -164,7 +165,12 @@ class _JoinTripState extends State<JoinTrip> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Get.to(
+                      () => const QRScanner(),
+                    transition: Transition.fade
+                  );
+                },
                 style: ButtonStyle(
                   backgroundColor: MaterialStateColor.resolveWith((states) => Colors.deepPurple),
                 ),
