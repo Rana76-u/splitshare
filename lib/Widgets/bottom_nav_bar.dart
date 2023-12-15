@@ -27,7 +27,7 @@ class _BottomBarState extends State<BottomBar> {
     }
     else if(widget.bottomIndex == 2){
       previousIndex = 1;
-      return InfoPage();//SearchPage(keyword: keyword,); //ShopHomePage
+      return const InfoPage();//SearchPage(keyword: keyword,); //ShopHomePage
     }
     return null;
   }

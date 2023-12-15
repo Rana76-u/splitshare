@@ -10,6 +10,7 @@ import 'package:splitshare/Models/global_variables.dart';
 import 'package:splitshare/Screens/CRUD/crud_event.dart';
 import 'package:splitshare/Screens/Home/home_appbar.dart';
 import 'package:splitshare/Screens/Home/home_floating.dart';
+import 'package:splitshare/Screens/My%20Trips/my_trips.dart';
 import '../../Widgets/bottom_nav_bar.dart';
 
 class HomePage extends StatefulWidget {
@@ -98,8 +99,9 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-
+  
   Future<void> loadTripInfo() async {
+    
     if (connection) {
       List<dynamic> loadTripInfoUserIDs = [];
       List<dynamic> loadTripInfoUserNames = [];
@@ -150,31 +152,46 @@ class _HomePageState extends State<HomePage> {
       await prefs.setString('tripCreator', tripCodeSnapshot.get('creator'));
 
       loadTripInfoUserIDs = tripCodeSnapshot.get('users');
-      List<String> stringUserIdsList =
-          loadTripInfoUserIDs.map((item) => item.toString()).toList();
-      await prefs.setStringList('userIDs', stringUserIdsList);
+      
+      if(loadTripInfoUserIDs.contains(FirebaseAuth.instance.currentUser!.uid)){
+        List<String> stringUserIdsList =
+        loadTripInfoUserIDs.map((item) => item.toString()).toList();
+        await prefs.setStringList('userIDs', stringUserIdsList);
 
-      //loads and save all usernames
-      for (int i = 0; i < loadTripInfoUserIDs.length; i++) {
-        DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
-            .collection('userData')
-            .doc(loadTripInfoUserIDs[i])
-            .get();
+        //loads and save all usernames
+        for (int i = 0; i < loadTripInfoUserIDs.length; i++) {
+          DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+              .collection('userData')
+              .doc(loadTripInfoUserIDs[i])
+              .get();
 
-        loadTripInfoUserNames.add(userSnapshot.get('name'));
+          loadTripInfoUserNames.add(userSnapshot.get('name'));
+        }
+        List<String> stringUserNamesList =
+        loadTripInfoUserNames.map((item) => item.toString()).toList();
+        await prefs.setStringList('userNames', stringUserNamesList);
+        //lastEdited = DateTime.parse(prefs.getString('lastEdited') ?? '');
+
+        userIDs = stringUserIdsList;
+        userNames = stringUserNamesList;
+
+        await backupData();
       }
-      List<String> stringUserNamesList =
-          loadTripInfoUserNames.map((item) => item.toString()).toList();
-      await prefs.setStringList('userNames', stringUserNamesList);
-      //lastEdited = DateTime.parse(prefs.getString('lastEdited') ?? '');
+      else{
+        //Unhandled Exception:
+        // dependOnInheritedWidgetOfExactType<_ScaffoldMessengerScope>() or dependOnInheritedElement()
+        // was called before _HomePageState.initState() completed.
+        /*messenger.showSnackBar(
+            const SnackBar(
+                content: Text('You have been removed from the trip')
+            )
+        );*/
 
-      userIDs = stringUserIdsList;
-      userNames = stringUserNamesList;
-
-      print(userIDs);
-      print(userNames);
-
-      await backupData();
+        Get.to(
+                () => const MyTrips(),
+            transition: Transition.fade
+        );
+      }
     }
 
     if (mounted) {
@@ -446,7 +463,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget searchFilterWidget() {
-    print(userNames);
     return Column(
       children: [
         // Search TextField

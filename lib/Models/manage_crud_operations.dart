@@ -83,7 +83,6 @@ class ManageCRUDOperations {
       //if OLD data edited
       if(docID != 'new'){
         int index = docIDs.indexOf(docID!);
-        print(index);
 
         titles[index] = title;
         descriptions[index] = description;

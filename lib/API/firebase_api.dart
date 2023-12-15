@@ -3,9 +3,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 Future<void> handleBackgroundMessage(RemoteMessage message) async {
-  print('Title: ${message.notification?.title}');
-  print('Body: ${message.notification?.body}');
-  print('Payload: ${message.data}');
+  //print('Title: ${message.notification?.title}');
+  //print('Body: ${message.notification?.body}');
+  //print('Payload: ${message.data}');
 }
 
 class FirebaseApi {
@@ -22,10 +22,6 @@ class FirebaseApi {
 
   void handleMessage(RemoteMessage? message) {
     if(message == null) return;
-
-    print('${message.notification?.title}');
-    print('${message.notification?.body}');
-    print('${message.data}');
   }
 
   Future initLocalNotifications() async {

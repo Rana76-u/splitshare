@@ -18,22 +18,20 @@ class CRUDEvent extends StatefulWidget {
   String? docID;
   String? time;
 
-  CRUDEvent({
-    super.key,
-    this.title,
-    this.amount,
-    this.description,
-    this.provider,
-    this.docID,
-    this.time
-  });
+  CRUDEvent(
+      {super.key,
+      this.title,
+      this.amount,
+      this.description,
+      this.provider,
+      this.docID,
+      this.time});
 
   @override
   State<CRUDEvent> createState() => _CRUDEventState();
 }
 
 class _CRUDEventState extends State<CRUDEvent> {
-
   bool _isLoading = false;
   bool amountFLag = false;
   bool providerFlag = false;
@@ -67,11 +65,7 @@ class _CRUDEventState extends State<CRUDEvent> {
     tripCode = prefs.getString('tripCode');
     tripName = prefs.getString('tripName')!;
 
-
-    print(userNames);
-    print(userIDs);
-
-    if(widget.title != null){
+    if (widget.title != null) {
       titleController.text = widget.title!;
       descriptionController.text = widget.description!;
       amountController.text = widget.amount!;
@@ -87,7 +81,6 @@ class _CRUDEventState extends State<CRUDEvent> {
   }
 
   Future<void> uploadInfo() async {
-
     setState(() {
       _isLoading = true;
     });
@@ -97,54 +90,46 @@ class _CRUDEventState extends State<CRUDEvent> {
 
     //String? tripCode = prefs.getString('tripCode');
 
-    if(amountController.text.isEmpty){
-
+    if (amountController.text.isEmpty) {
       setState(() {
         amountFLag = true;
       });
 
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Input Amount*'))
-      );
-    }
-    else if(selectedUserID == ''){
-
+      messenger.showSnackBar(const SnackBar(content: Text('Input Amount*')));
+    } else if (selectedUserID == '') {
       setState(() {
         providerFlag = true;
       });
 
       messenger.showSnackBar(
-          const SnackBar(content: Text('Please Select A Provider'))
-      );
-    }
-    else{
-
+          const SnackBar(content: Text('Please Select A Provider')));
+    } else {
       await ManageCRUDOperations().uploadInfo(
           titleController.text,
           descriptionController.text,
           double.parse(amountController.text),
           selectedUserID,
-          selectedUserName,
+          userNames![selectedProviderFlag],
           widget.docID ?? 'new',
-          tripCode!
-      );
+          tripCode!);
 
       //Send Notification
-      if(await InternetConnectionChecker().hasConnection){
+      if (await InternetConnectionChecker().hasConnection) {
         String token = '';
 
-        for(int i=0; i<userIDs!.length; i++){
-          final tokenSnapshot = await FirebaseFirestore.instance.collection('userTokens')
-              .doc(userIDs![i]).get();
+        for (int i = 0; i < userIDs!.length; i++) {
+          final tokenSnapshot = await FirebaseFirestore.instance
+              .collection('userTokens')
+              .doc(userIDs![i])
+              .get();
 
           token = tokenSnapshot.get('token');
 
           await SendNotification.toSpecific(
-          "$selectedUserName To $tripName",
+              "${userNames![selectedProviderFlag]} To $tripName",
               titleController.text,
-          token,
-          "HomePage");
-
+              token,
+              "HomePage");
         }
       }
 
@@ -183,17 +168,14 @@ class _CRUDEventState extends State<CRUDEvent> {
 
   @override
   Widget build(BuildContext context) {
-
     Loading loading = Loading();
 
     return WillPopScope(
-        onWillPop: () async {
-          Get.to(() => BottomBar(bottomIndex: 0),
-              transition: Transition.fade
-          );
+      onWillPop: () async {
+        Get.to(() => BottomBar(bottomIndex: 0), transition: Transition.fade);
 
-          return false;
-        },
+        return false;
+      },
       child: Scaffold(
         appBar: AppBar(
           actions: [
@@ -205,14 +187,12 @@ class _CRUDEventState extends State<CRUDEvent> {
                   await uploadInfo();
                 },
                 style: ButtonStyle(
-                    backgroundColor: MaterialStateColor.resolveWith((states) => const Color(0xFF8F00FF))
-                ),
+                    backgroundColor: MaterialStateColor.resolveWith(
+                        (states) => const Color(0xFF8F00FF))),
                 child: const Text(
                   'Save',
                   style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold
-                  ),
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -222,142 +202,149 @@ class _CRUDEventState extends State<CRUDEvent> {
           ],
         ),
         body: SingleChildScrollView(
-          child: _isLoading ?
-          loading.central(context)
-              :
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                const SizedBox(height: 10,),
-
-                //title
-                textFieldWidget(titleController, 'Title'),
-
-                const SizedBox(height: 5,),
-
-                //Amount
-                SizedBox(
-                  height: 60,
-                  child: TextField(
-                    controller: amountController,
-                    onChanged: (value) {
-                      setState(() {
-                        amountFLag = false;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide.none
+          child: _isLoading
+              ? loading.central(context)
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(
+                        height: 10,
                       ),
-                      enabledBorder:  const OutlineInputBorder(
-                          borderSide: BorderSide.none
+
+                      //title
+                      textFieldWidget(titleController, 'Title'),
+
+                      const SizedBox(
+                        height: 5,
                       ),
-                      prefixIcon: const Icon(
-                        Icons.onetwothree,
-                        color: Colors.grey,
-                      ),
-                      filled: true,
-                      fillColor: amountFLag ? Colors.red.shade50 : Colors.grey[100],
-                      hintText: 'Amount',
-                    ),
-                    cursorColor: Colors.black,
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
 
-                const SizedBox(height: 5,),
-
-                const Text('Provider'),
-
-                const SizedBox(height: 5,),
-
-                //Provider Name
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(22),
-                    color: providerFlag ? Colors.red.shade50 : Colors.white,
-                  ),
-                  child: SizedBox(
-                    height: 50,
-                    //MediaQuery.of(context).size.width*0.9 - 40,
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      scrollDirection: Axis.horizontal,
-                      itemCount: userNames?.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: TextButton(
-                            onPressed: (){
-                              setState(() {
-                                selectedProviderFlag = index;
-
-                                providerFlag = false;
-                                selectedUserID = userIDs![index];
-                              });
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateColor.resolveWith(
-                                      (states) => selectedProviderFlag == index ? Colors.deepPurple : Colors.deepPurple.withOpacity(0.08)
-                              ),
-
+                      //Amount
+                      SizedBox(
+                        height: 60,
+                        child: TextField(
+                          controller: amountController,
+                          onChanged: (value) {
+                            setState(() {
+                              amountFLag = false;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            focusedBorder: const OutlineInputBorder(
+                                borderSide: BorderSide.none),
+                            enabledBorder: const OutlineInputBorder(
+                                borderSide: BorderSide.none),
+                            prefixIcon: const Icon(
+                              Icons.onetwothree,
+                              color: Colors.grey,
                             ),
-                            child: Center(
-                                child: Text(
-                                  userNames![index],
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    color: selectedProviderFlag == index ? Colors.white : Colors.black
-                                  ),
-                                )
-                            ),
+                            filled: true,
+                            fillColor: amountFLag
+                                ? Colors.red.shade50
+                                : Colors.grey[100],
+                            hintText: 'Amount',
                           ),
-                        );
-                      },
-                    ),
+                          cursorColor: Colors.black,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 5,
+                      ),
+
+                      const Text('Provider'),
+
+                      const SizedBox(
+                        height: 5,
+                      ),
+
+                      //Provider Name
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          color:
+                              providerFlag ? Colors.red.shade50 : Colors.white,
+                        ),
+                        child: SizedBox(
+                          height: 50,
+                          //MediaQuery.of(context).size.width*0.9 - 40,
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            scrollDirection: Axis.horizontal,
+                            itemCount: userNames?.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      selectedProviderFlag = index;
+
+                                      providerFlag = false;
+                                      selectedUserID = userIDs![index];
+                                    });
+                                  },
+                                  style: ButtonStyle(
+                                    backgroundColor:
+                                        MaterialStateColor.resolveWith(
+                                            (states) =>
+                                                selectedProviderFlag == index
+                                                    ? Colors.deepPurple
+                                                    : Colors.deepPurple
+                                                        .withOpacity(0.08)),
+                                  ),
+                                  child: Center(
+                                      child: Text(
+                                    userNames![index],
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: selectedProviderFlag == index
+                                            ? Colors.white
+                                            : Colors.black),
+                                  )),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 8,
+                      ),
+
+                      //Description
+                      Container(
+                        constraints: const BoxConstraints(
+                            minHeight: 135, //135
+                            maxHeight: 300),
+                        child: TextField(
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          controller: descriptionController,
+                          style: const TextStyle(overflow: TextOverflow.clip),
+                          decoration: InputDecoration(
+                            focusedBorder: const OutlineInputBorder(
+                                borderSide: BorderSide.none),
+                            enabledBorder: const OutlineInputBorder(
+                                borderSide: BorderSide.none),
+                            prefixIcon: const Icon(
+                              Icons.short_text_rounded,
+                              color: Colors.grey,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                            hintText: 'Description',
+                          ),
+                          cursorColor: Colors.black,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-
-                const SizedBox(height: 8,),
-
-                //Description
-                Container(
-                  constraints: const BoxConstraints(
-                      minHeight: 135,//135
-                      maxHeight: 300
-                  ),
-                  child: TextField(
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                    controller: descriptionController,
-                    style: const TextStyle(
-                        overflow: TextOverflow.clip
-                    ),
-                    decoration: InputDecoration(
-                      focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide.none
-                      ),
-                      enabledBorder:  const OutlineInputBorder(
-                          borderSide: BorderSide.none
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.short_text_rounded,
-                        color: Colors.grey,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      hintText: 'Description',
-                    ),
-                    cursorColor: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -372,7 +359,6 @@ class _CRUDEventState extends State<CRUDEvent> {
           // Handle the selected value here
           if (value == "Delete") {
             // Add your delete logic here
-            print('Delete tapped!');
           }
         },
         itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -397,18 +383,16 @@ class _CRUDEventState extends State<CRUDEvent> {
                         onPressed: () async {
                           final messenger = ScaffoldMessenger.of(context);
                           // Perform the delete action
-                          if(await InternetConnectionChecker().hasConnection){
-                            ManageCRUDOperations().deleteEvent(widget.docID ?? "new", tripCode!);
-                          }
-                          else{
-                            messenger.showSnackBar(
-                              const SnackBar(
-                                  content: Text("Internet Connection Required to 'Delete'")
-                              )
-                            );
+                          if (await InternetConnectionChecker().hasConnection) {
+                            ManageCRUDOperations()
+                                .deleteEvent(widget.docID ?? "new", tripCode!);
+                          } else {
+                            messenger.showSnackBar(const SnackBar(
+                                content: Text(
+                                    "Internet Connection Required to 'Delete'")));
                           }
                           // Dismiss the dialog
-                          if(mounted){
+                          if (mounted) {
                             Navigator.pop(context);
                           }
                         },
@@ -424,9 +408,7 @@ class _CRUDEventState extends State<CRUDEvent> {
                 Icon(Icons.delete),
                 Text(
                   'Delete',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 )
               ],
             ),
@@ -441,19 +423,16 @@ class _CRUDEventState extends State<CRUDEvent> {
     );
   }
 
-  Widget textFieldWidget(TextEditingController textEditingController, String hint) {
+  Widget textFieldWidget(
+      TextEditingController textEditingController, String hint) {
     return SizedBox(
       height: 60,
       child: TextField(
         controller: textEditingController,
         autofocus: true,
         decoration: InputDecoration(
-          focusedBorder: const OutlineInputBorder(
-              borderSide: BorderSide.none
-          ),
-          enabledBorder:  const OutlineInputBorder(
-              borderSide: BorderSide.none
-          ),
+          focusedBorder: const OutlineInputBorder(borderSide: BorderSide.none),
+          enabledBorder: const OutlineInputBorder(borderSide: BorderSide.none),
           prefixIcon: const Icon(
             Icons.short_text_rounded,
             color: Colors.grey,

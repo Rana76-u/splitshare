@@ -90,8 +90,6 @@ class _LoginPageState extends State<LoginPage> {
                           )
                       );
 
-                      print('Error: $error');
-
                       setState(() {
                         isLoading = false;
                       });

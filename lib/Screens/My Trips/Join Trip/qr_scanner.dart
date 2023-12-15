@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_navigation/get_navigation.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_scanner_overlay/qr_scanner_overlay.dart';
@@ -142,7 +141,6 @@ class _QRScannerState extends State<QRScanner> {
                             _isLoading = true;
                           });
 
-                          print(tripCode);
                           await joinTrip();
                           break;
                         }
