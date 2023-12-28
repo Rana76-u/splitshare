@@ -31,6 +31,8 @@ class _InfoPageState extends State<InfoPage> {
   List<String> userNames = [];
   List<String> providerIDs = [];
 
+  String versionName = '';
+
   @override
   void initState() {
     _isLoading = true;
@@ -482,7 +484,7 @@ class _InfoPageState extends State<InfoPage> {
       padding: EdgeInsets.only(top: 50),
       child: Center(
         child: Text(
-          'Version 2.0',
+          'Version 2.0.0',
           style: TextStyle(color: Colors.grey),
           textAlign: TextAlign.center,
         ),

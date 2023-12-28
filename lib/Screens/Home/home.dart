@@ -784,7 +784,8 @@ class _HomePageState extends State<HomePage> {
                             ),
                             tileColor: Colors.blue.shade50,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                                borderRadius: BorderRadius.circular(10)
+                            ),
                           ),
                         );
                       } else {
